@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Courtyard Vadodara &middot; Automation Hub</title>
+<meta name="description" content="Automation hub for Courtyard by Marriott Vadodara — reports, dashboards and property tools." />
+<style>
+  :root{
+    --bg:#0f1419;
+    --panel:#161d26;
+    --panel-2:#1c2531;
+    --line:#26303d;
+    --text:#e8edf2;
+    --muted:#9aa7b4;
+    --accent:#b0143c;
+    --accent-soft:#e0577a;
+    --ring:rgba(176,20,60,.35);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(1200px 600px at 80% -10%,#1a2330 0%,var(--bg) 55%);
+    color:var(--text);
+    min-height:100vh;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+
+  header{
+    border-bottom:1px solid var(--line);
+    background:rgba(15,20,25,.6);
+    backdrop-filter:blur(8px);
+    position:sticky;top:0;z-index:10;
+  }
+  .bar{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:12px;font-weight:600;letter-spacing:.2px}
+  .logo{
+    width:34px;height:34px;border-radius:8px;
+    background:linear-gradient(135deg,var(--accent),#7a0d29);
+    display:grid;place-items:center;font-weight:700;font-size:14px;color:#fff;
+    box-shadow:0 4px 14px var(--ring);
+  }
+  .brand small{display:block;color:var(--muted);font-weight:400;font-size:12px;letter-spacing:.3px}
+  nav a{color:var(--muted);text-decoration:none;font-size:14px;margin-left:22px;transition:color .15s}
+  nav a:hover{color:var(--text)}
+
+  .hero{padding:72px 0 40px}
+  .eyebrow{
+    display:inline-block;font-size:12px;letter-spacing:2px;text-transform:uppercase;
+    color:var(--accent-soft);font-weight:600;margin-bottom:16px;
+  }
+  h1{font-size:clamp(28px,5vw,46px);line-height:1.1;font-weight:700;letter-spacing:-.5px}
+  .hero p{color:var(--muted);font-size:18px;max-width:620px;margin-top:18px}
+
+  .grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+    gap:18px;padding:24px 0 64px;
+  }
+  .card{
+    display:block;text-decoration:none;color:inherit;
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));
+    border:1px solid var(--line);border-radius:14px;padding:24px;
+    transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+    position:relative;overflow:hidden;
+  }
+  .card:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .card .ico{
+    width:44px;height:44px;border-radius:10px;display:grid;place-items:center;
+    background:var(--panel-2);border:1px solid var(--line);font-size:20px;margin-bottom:16px;
+  }
+  .card h3{font-size:17px;font-weight:600;margin-bottom:6px}
+  .card p{color:var(--muted);font-size:14px}
+  .card .tag{
+    position:absolute;top:16px;right:16px;font-size:11px;letter-spacing:.5px;
+    text-transform:uppercase;color:var(--muted);border:1px solid var(--line);
+    padding:3px 8px;border-radius:999px;
+  }
+  .card.primary{border-color:var(--accent)}
+  .card.primary .ico{background:linear-gradient(135deg,var(--accent),#7a0d29);border-color:transparent;color:#fff}
+  .card.primary .tag{color:var(--accent-soft);border-color:var(--ring)}
+  .card.soon{opacity:.6}
+  .card.soon:hover{transform:none;border-color:var(--line);box-shadow:none;cursor:default}
+
+  footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-size:13px}
+  .foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap bar">
+    <div class="brand">
+      <div class="logo">CY</div>
+      <div>Courtyard Vadodara<small>Automation Hub</small></div>
+    </div>
+    <nav>
+      <a href="dbr.html">DBR</a>
+      <a href="#tools">Tools</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">Courtyard by Marriott &middot; Vadodara</span>
+    <h1>Property automation, all in one place.</h1>
+    <p>Daily reports, dashboards and operational tools for the Courtyard Vadodara team — automatically generated and always up to date.</p>
+  </section>
+
+  <section id="tools" class="grid">
+    <a class="card primary" href="dbr.html">
+      <span class="tag">Daily</span>
+      <div class="ico">&#128202;</div>
+      <h3>Daily Business Report (DBR)</h3>
+      <p>Rooms, revenue, ADR, occupancy and pace at a glance — refreshed every morning.</p>
+    </a>
+
+    <div class="card soon">
+      <span class="tag">Soon</span>
+      <div class="ico">&#128200;</div>
+      <h3>Revenue &amp; Pace</h3>
+      <p>Forward-looking pickup and pace tracking against budget and last year.</p>
+    </div>
+
+    <div class="card soon">
+      <span class="tag">Soon</span>
+      <div class="ico">&#129513;</div>
+      <h3>Operations</h3>
+      <p>Housekeeping, maintenance and front-office automation summaries.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div>Courtyard by Marriott Vadodara &middot; Managed by NewcrestImage</div>
+    <div>Automation Hub</div>
+  </div>
+</footer>
+</body>
+</html>

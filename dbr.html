@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DBR &middot; Courtyard Vadodara</title>
+<meta name="description" content="Daily Business Report — Courtyard by Marriott Vadodara." />
+<style>
+  :root{
+    --bg:#0f1419;--panel:#161d26;--panel-2:#1c2531;--line:#26303d;
+    --text:#e8edf2;--muted:#9aa7b4;--accent:#b0143c;--accent-soft:#e0577a;
+    --ring:rgba(176,20,60,.35);--good:#3fb98a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(1200px 600px at 80% -10%,#1a2330 0%,var(--bg) 55%);
+    color:var(--text);min-height:100vh;line-height:1.55;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  header{border-bottom:1px solid var(--line);background:rgba(15,20,25,.6);backdrop-filter:blur(8px);position:sticky;top:0;z-index:10}
+  .bar{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:12px;font-weight:600}
+  .logo{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#7a0d29);display:grid;place-items:center;font-weight:700;font-size:14px;color:#fff;box-shadow:0 4px 14px var(--ring)}
+  .brand small{display:block;color:var(--muted);font-weight:400;font-size:12px}
+  nav a{color:var(--muted);text-decoration:none;font-size:14px;margin-left:22px}
+  nav a:hover{color:var(--text)}
+  .page{padding:44px 0 64px}
+  .titlerow{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:8px}
+  h1{font-size:30px;font-weight:700;letter-spacing:-.4px}
+  .date{color:var(--muted);font-size:14px}
+  .lead{color:var(--muted);max-width:640px;margin-bottom:28px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-bottom:28px}
+  .kpi{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:12px;padding:20px}
+  .kpi .label{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px}
+  .kpi .val{font-size:26px;font-weight:700}
+  .kpi .val .dash{color:var(--line)}
+  .panel{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:14px;padding:28px;text-align:center}
+  .panel .ico{font-size:34px;margin-bottom:12px}
+  .panel h2{font-size:18px;font-weight:600;margin-bottom:8px}
+  .panel p{color:var(--muted);max-width:460px;margin:0 auto}
+  .badge{display:inline-block;margin-bottom:22px;font-size:12px;letter-spacing:.5px;text-transform:uppercase;color:var(--accent-soft);border:1px solid var(--ring);padding:4px 12px;border-radius:999px}
+  footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-size:13px}
+  .foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  a.back{color:var(--accent-soft);text-decoration:none;font-size:14px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap bar">
+    <div class="brand">
+      <div class="logo">CY</div>
+      <div>Courtyard Vadodara<small>Daily Business Report</small></div>
+    </div>
+    <nav>
+      <a href="index.html">&larr; Hub</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap page">
+  <div class="titlerow">
+    <h1>Daily Business Report</h1>
+    <div class="date" id="today"></div>
+  </div>
+  <p class="lead">Snapshot of the property's daily performance. Live data will populate here once the DBR feed is connected.</p>
+
+  <section class="kpis">
+    <div class="kpi"><div class="label">Occupancy</div><div class="val"><span class="dash">&mdash;</span></div></div>
+    <div class="kpi"><div class="label">ADR</div><div class="val"><span class="dash">&mdash;</span></div></div>
+    <div class="kpi"><div class="label">RevPAR</div><div class="val"><span class="dash">&mdash;</span></div></div>
+    <div class="kpi"><div class="label">Rooms Sold</div><div class="val"><span class="dash">&mdash;</span></div></div>
+    <div class="kpi"><div class="label">Room Revenue</div><div class="val"><span class="dash">&mdash;</span></div></div>
+    <div class="kpi"><div class="label">Total Revenue</div><div class="val"><span class="dash">&mdash;</span></div></div>
+  </section>
+
+  <section class="panel">
+    <span class="badge">Awaiting data feed</span>
+    <div class="ico">&#128202;</div>
+    <h2>DBR page is ready</h2>
+    <p>This page is set up and deployed. Share the DBR report and the source data, and I'll wire it up to populate these figures automatically each day.</p>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div>Courtyard by Marriott Vadodara &middot; Managed by NewcrestImage</div>
+    <div><a class="back" href="index.html">Back to hub</a></div>
+  </div>
+</footer>
+
+<script>
+  var d=new Date();
+  var opts={weekday:'long',year:'numeric',month:'long',day:'numeric'};
+  document.getElementById('today').textContent=d.toLocaleDateString('en-US',opts);
+</script>
+</body>
+</html>
