@@ -6,52 +6,51 @@
 <title>DBR · Courtyard Vadodara</title>
 <meta name="description" content="Daily Business Report — Courtyard by Marriott Vadodara." />
 <style>
-  :root{
-    --bg:#0f1419;--panel:#161d26;--panel-2:#1c2531;--line:#26303d;--line-soft:#1e2731;
+  :root{--bg:#0f1419;--panel:#161d26;--panel-2:#1c2531;--line:#26303d;--line-soft:#1e2731;
     --text:#e8edf2;--muted:#93a1b0;--faint:#697682;--accent:#b0143c;--accent-soft:#e0577a;
-    --ring:rgba(176,20,60,.30);--good:#3fb98a;--bad:#e0577a;--warn:#e0a13c;--blue:#4f9fd0;
-    --head:#131a22;--sec:#0e141b;
-  }
+    --good:#3fb98a;--bad:#e0577a;--warn:#e0a13c;--blue:#4f9fd0;--head:#131a22;--sec:#0e141b;--gold:#c99a3f}
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    background:radial-gradient(1200px 600px at 85% -10%,#1a2330 0%,var(--bg) 55%);
-    color:var(--text);min-height:100vh;line-height:1.45;-webkit-font-smoothing:antialiased}
+    background:radial-gradient(1200px 600px at 85% -10%,#1a2330 0%,var(--bg) 55%);color:var(--text);min-height:100vh;line-height:1.45;-webkit-font-smoothing:antialiased}
   .wrap{max-width:1200px;margin:0 auto;padding:0 20px}
   header{border-bottom:1px solid var(--line);background:rgba(15,20,25,.65);backdrop-filter:blur(8px);position:sticky;top:0;z-index:20}
   .bar{display:flex;align-items:center;justify-content:space-between;height:60px}
   .brand{display:flex;align-items:center;gap:11px;font-weight:600}
-  .logo{width:33px;height:33px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#7a0d29);display:grid;place-items:center;font-weight:700;font-size:13px;color:#fff;box-shadow:0 4px 14px var(--ring)}
+  .logo{width:33px;height:33px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#7a0d29);display:grid;place-items:center;font-weight:700;font-size:13px;color:#fff;box-shadow:0 4px 14px rgba(176,20,60,.35)}
   .brand small{display:block;color:var(--muted);font-weight:400;font-size:12px}
   nav a{color:var(--muted);text-decoration:none;font-size:14px;margin-left:18px}
   nav a:hover{color:var(--text)}
-  .page{padding:26px 0 56px}
-  .titlerow{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  .page{padding:24px 0 56px}
+  .titlerow{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:6px}
   h1{font-size:23px;font-weight:700;letter-spacing:-.3px}
+  .picker{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 12px}
+  .picker label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+  .picker select{background:#0e141b;color:var(--text);border:1px solid var(--line);border-radius:7px;padding:7px 10px;font-size:14px;font-weight:600;cursor:pointer;min-width:210px}
+  .picker select:focus{outline:2px solid var(--ring);border-color:var(--accent)}
+  .sub{color:var(--muted);font-size:13.5px;margin:2px 0 18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   .badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--line)}
   .badge.ok{color:var(--good);border-color:#2c6b55}
   .badge .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
-  .sub{color:var(--muted);font-size:13.5px;margin:4px 0 20px}
-  .sechead{display:flex;align-items:center;gap:10px;margin:26px 2px 12px}
-  .sechead h2{font-size:14px;font-weight:700;letter-spacing:.3px}
-  .aichip{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#fff;background:linear-gradient(135deg,var(--accent),#7a0d29);padding:3px 8px;border-radius:6px;box-shadow:0 2px 10px var(--ring)}
+  .sechead{display:flex;align-items:center;gap:10px;margin:24px 2px 12px}
+  .sechead h2{font-size:14px;font-weight:700}
+  .aichip{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#fff;background:linear-gradient(135deg,var(--accent),#7a0d29);padding:3px 8px;border-radius:6px}
+  .note{font-size:12px;color:var(--faint)}
 
-  .hero{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:8px}
-  @media(max-width:680px){.hero{grid-template-columns:1fr}}
+  .hero{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:14px;margin-bottom:8px}
+  @media(max-width:760px){.hero{grid-template-columns:1fr 1fr}}
   .hcard{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:12px;padding:15px 18px}
-  .hcard.today{border-color:var(--ring);background:linear-gradient(135deg,#241118,#1c2531)}
+  .hcard.today{border-color:rgba(176,20,60,.3);background:linear-gradient(135deg,#241118,#1c2531)}
   .hcard .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:7px}
   .hcard.today .lbl{color:var(--accent-soft)}
-  .hcard .v{font-size:23px;font-weight:700;letter-spacing:-.3px}
+  .hcard .v{font-size:22px;font-weight:700;letter-spacing:-.3px}
   .hcard .vs{font-size:12px;color:var(--faint);margin-top:5px}
 
-  /* insights */
-  .summary{background:linear-gradient(135deg,#1d1420,#1a222c);border:1px solid var(--ring);border-radius:12px;padding:14px 18px;display:flex;gap:12px;align-items:flex-start;margin-bottom:14px}
-  .summary .ic{font-size:18px;line-height:1.3}
-  .summary .tx{font-size:14.5px;font-weight:500}
+  .summary{background:linear-gradient(135deg,#1d1420,#1a222c);border:1px solid rgba(176,20,60,.3);border-radius:12px;padding:13px 18px;display:flex;gap:12px;align-items:flex-start;margin-bottom:14px}
+  .summary .ic{font-size:17px}.summary .tx{font-size:14px;font-weight:500}
   .icards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
   @media(max-width:820px){.icards{grid-template-columns:1fr}}
   .icard{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:12px;overflow:hidden}
-  .icard .ih{padding:11px 16px;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:7px}
+  .icard .ih{padding:11px 16px;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--line)}
   .icard.win .ih{color:var(--good)}.icard.watch .ih{color:var(--warn)}.icard.act .ih{color:var(--accent-soft)}
   .icard ul{list-style:none;padding:6px 0}
   .icard li{padding:9px 16px;border-bottom:1px solid var(--line-soft)}
@@ -60,8 +59,7 @@
   .icard li .d{font-size:12px;color:var(--muted)}
   .icard.act li .t::before{content:"→ ";color:var(--accent-soft)}
 
-  .charts{display:grid;grid-template-columns:1fr;gap:14px}
-  .crow{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:14px}
+  .crow{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:14px;margin-top:14px}
   @media(max-width:820px){.crow{grid-template-columns:1fr}}
   .card{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:12px;padding:16px 18px}
   .card h3{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:12px}
@@ -78,7 +76,6 @@
   .spark .big{font-size:22px;font-weight:700;letter-spacing:-.3px}
   .spark .cap{font-size:12px;color:var(--faint);margin-top:2px}
 
-  /* today-in-detail */
   .mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:18px}
   .mgrid>div{background:var(--panel);padding:13px 16px}
   .mgrid .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
@@ -97,7 +94,7 @@
   table.dt td.num{font-variant-numeric:tabular-nums}
   table.dt td.rev{font-weight:600}
   table.dt tr.tot td{background:var(--head);font-weight:700;border-top:1px solid var(--line)}
-  .mb{display:inline-block;height:6px;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent-soft));vertical-align:middle;margin-left:8px;box-shadow:0 0 8px var(--ring)}
+  .mb{display:inline-block;height:6px;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent-soft));vertical-align:middle;margin-left:8px;box-shadow:0 0 8px rgba(176,20,60,.35)}
 
   .reportwrap{border:1px solid var(--line);border-radius:12px;overflow:auto;background:var(--panel)}
   table.report{width:100%;border-collapse:collapse;font-size:12.5px;min-width:900px}
@@ -112,8 +109,7 @@
   tbody tr:hover td.stick{background:#1b232d}
   td.num{font-variant-numeric:tabular-nums}
   tr.sec td{background:var(--sec);color:var(--accent-soft);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.7px;text-align:left;position:sticky;left:0}
-  tr.total td{font-weight:700;background:#1a222c}
-  tr.total td.stick{background:#1a222c}
+  tr.total td{font-weight:700;background:#1a222c}tr.total td.stick{background:#1a222c}
   .var.up{color:var(--good)}.var.down{color:var(--bad)}
   .divg{border-left:1px solid var(--line)}
   footer{border-top:1px solid var(--line);padding:20px 0;color:var(--faint);font-size:12.5px;margin-top:24px}
@@ -130,36 +126,70 @@
   </div>
 </header>
 
-<main class="wrap page" id="app"><div class="err" id="loading">Loading owner report…</div></main>
+<main class="wrap page" id="app"><div class="err" id="loading">Loading report…</div></main>
 
 <footer><div class="wrap foot"><div>Courtyard by Marriott Vadodara · Managed by NewcrestImage</div><div id="stamp"></div></div></footer>
 
 <script>
 const INR=new Intl.NumberFormat('en-IN',{maximumFractionDigits:0});
 const rs=v=>v==null?'—':'₹'+INR.format(Math.round(v));
-const fmt=(v,kind)=>{if(v==null)return '—';if(kind==='pct')return (v*100).toFixed(1)+'%';if(kind==='number')return INR.format(Math.round(v));return '₹'+INR.format(Math.round(v));};
-const vcell=v=>{if(v==null)return '<td class="num">—</td>';const up=v>=0;return `<td class="num var ${up?'up':'down'}">${(up?'+':'')+(v*100).toFixed(0)}%</td>`;};
+const num=v=>v==null?'—':INR.format(Math.round(v));
 const MONTHS=['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const findRow=(d,l)=>{for(const s of d.sections)for(const r of s.rows)if(r.label.startsWith(l))return r;return null;};
+const WD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+let DATA=null;
 
-function heroCard(cls,title,row,key){
-  const ty=row?row[key+'_ty']:null,varr=row?row[key+'_var']:null;let vs='';
-  if(varr!=null){const up=varr>=0;vs=`<span style="color:${up?'var(--good)':'var(--bad)'}">${up?'▲':'▼'} ${(Math.abs(varr)*100).toFixed(0)}% vs budget</span>`;}
-  return `<div class="hcard ${cls}"><div class="lbl">${title}</div><div class="v">${rs(ty)}</div><div class="vs">${vs}</div></div>`;
+function dObj(iso){return new Date(iso+'T00:00:00');}
+function labelDate(iso){const d=dObj(iso);return `${WD[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()+1]} ${d.getFullYear()}`;}
+function lyIso(iso){return (parseInt(iso.slice(0,4))-1)+iso.slice(4);}
+function pctStr(p){return (p>=0?'+':'')+(p*100).toFixed(0)+'%';}
+
+/* ---------- insights ---------- */
+function ACTION(label){
+  const l=label.toLowerCase();
+  if(/banquet|bqts/.test(l))return 'Push the banquet & events pipeline — confirm tentative bookings.';
+  if(/bgc|baroda/.test(l))return 'Review Baroda Grill covers, footfall and pricing.';
+  if(/deck|starbucks/.test(l))return 'Lift The Deck footfall with a promotion.';
+  if(/brubon/.test(l))return 'Drive Brubon covers with a daypart offer.';
+  if(/transport/.test(l))return 'Check transport-desk usage and tie-ups.';
+  return 'Review pricing, covers and promotions to close the gap.';
 }
-function insightsBlock(ins){
-  if(!ins)return '';
-  const li=a=>a.map(x=>`<li><div class="t">${x.title}</div><div class="d">${x.detail}</div></li>`).join('');
-  return `
-    <div class="sechead"><span class="aichip">✦ AI</span><h2>Insights &amp; Action Items</h2></div>
-    <div class="summary"><div class="ic">✦</div><div class="tx">${ins.summary||''}</div></div>
-    <div class="icards">
-      <div class="icard win"><div class="ih">▲ Highlights</div><ul>${li(ins.highlights)||'<li><div class="d">—</div></li>'}</ul></div>
-      <div class="icard watch"><div class="ih">◆ Watch</div><ul>${li(ins.watch)||'<li><div class="d">Nothing notable.</div></li>'}</ul></div>
-      <div class="icard act"><div class="ih">✓ Action Items</div><ul>${li(ins.action_items)||'<li><div class="d">No actions flagged.</div></li>'}</ul></div>
-    </div>`;
+function dayInsights(iso){
+  const cur=DATA.days[iso]; const ly=DATA.days[lyIso(iso)];
+  const oi=cur.operating_income;
+  if(!ly){
+    const tops=[...cur.outlet_details].filter(o=>o.revenue).sort((a,b)=>b.revenue-a.revenue).slice(0,3);
+    return {summary:`Total hotel revenue ${rs(oi.total_hotel_revenue)} · occupancy ${(oi.occupancy*100).toFixed(0)}% · ADR ${rs(oi.adr)}.`,
+      highlights:tops.map(o=>({title:`${o.name} — ${rs(o.revenue)}`,detail:`${num(o.covers)} covers · avg ${rs(o.avg_check)}`})),
+      watch:[],action_items:[]};
+  }
+  const lyoi=ly.operating_income;
+  const items=[];
+  cur.outlet_details.forEach(o=>{const l=ly.outlet_details.find(x=>x.name===o.name);if(l&&o.revenue!=null&&l.revenue!=null)items.push({name:o.name,cur:o.revenue,ly:l.revenue});});
+  cur.ood.forEach(o=>{const l=ly.ood.find(x=>x.name===o.name);if(l&&o.revenue!=null&&l.revenue!=null)items.push({name:o.name,cur:o.revenue,ly:l.revenue});});
+  items.forEach(i=>{i.delta=i.cur-i.ly;i.pct=i.ly?i.delta/Math.abs(i.ly):null;});
+  const MAT=8000;
+  const wins=items.filter(i=>i.delta>=MAT).sort((a,b)=>b.delta-a.delta).slice(0,3);
+  const cons=items.filter(i=>i.delta<=-MAT).sort((a,b)=>a.delta-b.delta).slice(0,3);
+  const totDelta=oi.total_hotel_revenue-lyoi.total_hotel_revenue;
+  const totPct=lyoi.total_hotel_revenue?totDelta/lyoi.total_hotel_revenue:0;
+  const tone=totPct>=0.03?'Ahead of last year':(totPct<=-0.03?'Behind last year':'In line with last year');
+  const drivers=wins.slice(0,2).map(w=>w.name).join(', ');
+  return {
+    summary:`${tone} — total hotel revenue ${rs(oi.total_hotel_revenue)}, ${pctStr(totPct)} vs same day 2025`+(drivers?`, led by ${drivers}.`:'.'),
+    highlights:[{title:`Total revenue ${pctStr(totPct)} YoY`,detail:`${rs(oi.total_hotel_revenue)} vs ${rs(lyoi.total_hotel_revenue)} last year.`}]
+      .concat(wins.map(w=>({title:`${w.name} up ${rs(w.delta)} YoY`,detail:`${rs(w.cur)} vs ${rs(w.ly)} (${pctStr(w.pct)}).`}))),
+    watch:cons.map(c=>({title:`${c.name} ${pctStr(c.pct)} YoY`,detail:`${rs(c.cur)} vs ${rs(c.ly)} last year (${rs(-c.delta)} lower).`})),
+    action_items:cons.map(c=>({title:`${c.name}: ${rs(-c.delta)} behind last year`,detail:ACTION(c.name)})),
+  };
 }
-function lineChart(series,valkey,color){
+
+/* ---------- charts ---------- */
+function monthSeries(iso){
+  const pre=iso.slice(0,7);
+  return Object.keys(DATA.days).filter(k=>k.slice(0,7)===pre).sort()
+    .map(k=>({iso:k,day:dObj(k).getDate(),...DATA.days[k].operating_income}));
+}
+function lineChart(series,valkey,color,selDay){
   const W=640,H=200,pl=48,pr=12,pt=14,pb=24;
   const ys=series.map(d=>d[valkey]),ymax=Math.max(...ys)*1.08||1;
   const x=i=>pl+(series.length<2?0:i/(series.length-1)*(W-pl-pr));
@@ -167,131 +197,149 @@ function lineChart(series,valkey,color){
   const line=series.map((d,i)=>`${i?'L':'M'}${x(i).toFixed(1)},${y(d[valkey]).toFixed(1)}`).join(' ');
   const area=`${line} L${x(series.length-1).toFixed(1)},${H-pb} L${x(0).toFixed(1)},${H-pb} Z`;
   let grid='';for(let g=0;g<=3;g++){const gv=ymax*g/3,gy=y(gv);grid+=`<line x1="${pl}" y1="${gy}" x2="${W-pr}" y2="${gy}" stroke="#20293466"/><text x="${pl-7}" y="${gy+4}" text-anchor="end" fill="var(--faint)" font-size="10">${(gv/1e5).toFixed(1)}L</text>`;}
-  let xl='';series.forEach((d,i)=>{if(series.length<=16||i%2===0)xl+=`<text x="${x(i)}" y="${H-7}" text-anchor="middle" fill="var(--faint)" font-size="10">${d.day}</text>`;});
-  const dots=series.map((d,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(d[valkey]).toFixed(1)}" r="2.6" fill="#0f1419" stroke="${color}" stroke-width="2"/>`).join('');
+  let xl='';series.forEach((d,i)=>{if(series.length<=16||i%2===0)xl+=`<text x="${x(i)}" y="${H-7}" text-anchor="middle" fill="${d.day===selDay?'var(--accent-soft)':'var(--faint)'}" font-size="10" font-weight="${d.day===selDay?'700':'400'}">${d.day}</text>`;});
+  const dots=series.map((d,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(d[valkey]).toFixed(1)}" r="${d.day===selDay?4.5:2.6}" fill="${d.day===selDay?'var(--accent-soft)':'#0f1419'}" stroke="${color}" stroke-width="2"/>`).join('');
   const hit=series.map((d,i)=>`<rect x="${(x(i)-(W-pl-pr)/series.length/2).toFixed(1)}" y="${pt}" width="${((W-pl-pr)/series.length).toFixed(1)}" height="${H-pt-pb}" fill="transparent" data-i="${i}" class="hit"/>`).join('');
-  return {svg:`<svg viewBox="0 0 ${W} ${H}"><defs><linearGradient id="g1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity="0.26"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>${grid}<path d="${area}" fill="url(#g1)"/><path d="${line}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/><line id="cr" x1="0" y1="${pt}" x2="0" y2="${H-pb}" stroke="${color}" stroke-dasharray="3 3" opacity="0"/>${dots}${xl}${hit}</svg>`,x,y,W,H};
+  return {svg:`<svg viewBox="0 0 ${W} ${H}"><defs><linearGradient id="g1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity="0.26"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>${grid}<path d="${area}" fill="url(#g1)"/><path d="${line}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/><line id="cr" x1="0" y1="${pt}" x2="0" y2="${H-pb}" stroke="${color}" stroke-dasharray="3 3" opacity="0"/>${dots}${xl}${hit}</svg>`,x,y,W,H,series};
 }
 function sparkline(series,valkey,color){
-  const W=260,H=54,pt=6,pb=6;
-  const ys=series.map(d=>d[valkey]),ymin=Math.min(...ys),ymax=Math.max(...ys),rng=(ymax-ymin)||1;
-  const x=i=>i/(series.length-1)*W;
-  const y=v=>pt+(1-(v-ymin)/rng)*(H-pt-pb);
+  const W=260,H=54,pt=6,pb=6;const ys=series.map(d=>d[valkey]),mn=Math.min(...ys),mx=Math.max(...ys),rng=(mx-mn)||1;
+  const x=i=>i/(series.length-1)*W,y=v=>pt+(1-(v-mn)/rng)*(H-pt-pb);
   const line=series.map((d,i)=>`${i?'L':'M'}${x(i).toFixed(1)},${y(d[valkey]).toFixed(1)}`).join(' ');
   return `<svg viewBox="0 0 ${W} ${H}"><path d="${line}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/><circle cx="${x(series.length-1).toFixed(1)}" cy="${y(ys[ys.length-1]).toFixed(1)}" r="3" fill="${color}"/></svg>`;
 }
-function mixBar(mix){
-  const segs=[['Rooms',mix.room,'var(--accent)'],['F&B',mix.fb,'var(--warn)'],['Other',mix.ood,'var(--blue)']];
+function mixBar(oi){
+  const segs=[['Rooms',oi.room_revenue,'var(--accent)'],['F&B',oi.fb_revenue,'var(--warn)'],['Other',oi.ood_revenue,'var(--blue)']];
   const tot=segs.reduce((s,x)=>s+(x[1]||0),0)||1;
   const bar=segs.map(([n,v,c])=>{const p=(v||0)/tot*100;return `<span style="flex:${v||0};background:${c}">${p>10?Math.round(p)+'%':''}</span>`;}).join('');
   const leg=segs.map(([n,v,c])=>`<div class="row"><span class="sw" style="background:${c}"></span>${n}<span class="amt">${rs(v)}</span></div>`).join('');
   return `<div class="mix">${bar}</div><div class="mixleg">${leg}</div>`;
 }
 
-const OUTLET_NAMES=['812 CE','812 Meal Plan','Brubon Café','MBOW','Baroda Grill (BGC)','IRD','The Deck (Starbucks)','Banquet'];
-const secByTitle=(d,t)=>d.sections.find(s=>s.title===t);
-const valBy=(sec,lbl)=>{const r=sec&&sec.rows.find(x=>x.label.startsWith(lbl));return r?r.today_ty:null;};
-function detailBlock(d){
-  const oi=secByTitle(d,'Operating Income'); if(!oi)return '';
-  const g=[['Total Rooms',valBy(oi,'Total Rooms in Hotel'),'number'],['Occupied Rooms',valBy(oi,'Occupied Rooms'),'number'],['Occupancy',valBy(oi,'Occupancy'),'pct'],
-    ['ADR',valBy(oi,'ADR'),'cur'],['RevPAR',valBy(oi,'RevPar'),'cur'],['Total Covers',valBy(oi,'Total Covers'),'number'],
-    ['APC (Avg / Cover)',valBy(oi,'Total APC'),'cur'],['Room Revenue',valBy(oi,'Room Revenue'),'cur'],['F&B Revenue',valBy(oi,'F&B Revenue'),'cur']];
-  const grid=g.map(([l,v,k])=>`<div><div class="lbl">${l}</div><div class="v">${k==='pct'?(v==null?'—':(v*100).toFixed(1)+'%'):(k==='number'?(v==null?'—':INR.format(Math.round(v))):rs(v))}</div></div>`).join('');
-  // outlets: chunk Outlet Details rows into triplets
-  const od=secByTitle(d,'Outlet Details'); const rows=od?od.rows:[];
-  const outs=[];for(let i=0;i+2<rows.length;i+=3){outs.push({name:OUTLET_NAMES[i/3]||rows[i+2].label,covers:rows[i].today_ty,avg:rows[i+1].today_ty,rev:rows[i+2].today_ty});}
-  const maxRev=Math.max(...outs.map(o=>o.rev||0),1);
-  let ob=outs.map(o=>`<tr><td>${o.name}</td><td class="num">${o.covers==null?'—':INR.format(Math.round(o.covers))}</td><td class="num">${rs(o.avg)}</td><td class="num rev">${rs(o.rev)}<span class="mb" style="width:${Math.max(5,(o.rev||0)/maxRev*70)}px"></span></td></tr>`).join('');
-  const tRev=outs.reduce((s,o)=>s+(o.rev||0),0),tCov=outs.reduce((s,o)=>s+(o.covers||0),0);
-  ob+=`<tr class="tot"><td>Total F&B</td><td class="num">${INR.format(Math.round(tCov))}</td><td></td><td class="num">${rs(tRev)}</td></tr>`;
-  // OOD
-  const ood=secByTitle(d,'Other Operating Departments');
-  const oodRows=(ood?ood.rows:[]).filter(r=>r.kind==='currency'&&(r.today_ty||0)!==0);
-  let odb=oodRows.map(r=>`<tr><td>${r.label.replace(/\s*\(.*\)/,'')}</td><td class="num rev">${rs(r.today_ty)}</td></tr>`).join('');
-  const tOod=oodRows.reduce((s,r)=>s+(r.today_ty||0),0);
-  odb+=`<tr class="tot"><td>Total OOD</td><td class="num">${rs(tOod)}</td></tr>`;
-  // F&B split
-  const fb=secByTitle(d,'F&B Details');
-  const fbb=(fb?fb.rows:[]).map(r=>`<tr><td>${r.label}</td><td class="num rev">${rs(r.today_ty)}</td></tr>`).join('');
-  return `
-    <div class="sechead"><h2>Today in Detail</h2></div>
+/* ---------- detail ---------- */
+function detailBlock(day){
+  const oi=day.operating_income;
+  const g=[['Total Rooms',num(oi.total_rooms)],['Occupied Rooms',num(oi.occupied)],['Occupancy',oi.occupancy==null?'—':(oi.occupancy*100).toFixed(1)+'%'],
+    ['ADR',rs(oi.adr)],['RevPAR',rs(oi.revpar)],['Total Covers',num(oi.total_covers)],
+    ['APC (Avg / Cover)',rs(oi.apc)],['Room Revenue',rs(oi.room_revenue)],['F&B Revenue',rs(oi.fb_revenue)]];
+  const grid=g.map(([l,v])=>`<div><div class="lbl">${l}</div><div class="v">${v}</div></div>`).join('');
+  const outs=day.outlet_details;const maxRev=Math.max(...outs.map(o=>o.revenue||0),1);
+  let ob=outs.map(o=>`<tr><td>${o.name}</td><td class="num">${o.covers==null?'—':num(o.covers)}</td><td class="num">${rs(o.avg_check)}</td><td class="num rev">${rs(o.revenue)}<span class="mb" style="width:${Math.max(5,(o.revenue||0)/maxRev*70)}px"></span></td></tr>`).join('');
+  const tRev=outs.reduce((s,o)=>s+(o.revenue||0),0),tCov=outs.reduce((s,o)=>s+(o.covers||0),0);
+  ob+=`<tr class="tot"><td>Total F&B</td><td class="num">${num(tCov)}</td><td></td><td class="num">${rs(tRev)}</td></tr>`;
+  const oodRows=day.ood.filter(r=>(r.revenue||0)!==0);
+  let odb=oodRows.map(r=>`<tr><td>${r.name.replace(/\s*\(.*\)/,'')}</td><td class="num rev">${rs(r.revenue)}</td></tr>`).join('');
+  odb+=`<tr class="tot"><td>Total OOD</td><td class="num">${rs(oodRows.reduce((s,r)=>s+(r.revenue||0),0))}</td></tr>`;
+  const fb=day.fb_details;
+  const fbb=`<tr><td>Restaurants &amp; Lounge (RNL)</td><td class="num rev">${rs(fb.total_rnl)}</td></tr><tr><td>Banquet</td><td class="num rev">${rs(fb.banquet_other)}</td></tr><tr><td>In-Room Dining (IRD)</td><td class="num rev">${rs(fb.ird)}</td></tr>`;
+  return `<div class="sechead"><h2>Day in Detail</h2></div>
     <div class="mgrid">${grid}</div>
     <div class="cols2">
       <div class="dcard"><div class="dh">Outlet Details — covers · avg check · revenue</div>
         <table class="dt"><thead><tr><th>Outlet</th><th>Covers</th><th>Avg Check</th><th>Revenue</th></tr></thead><tbody>${ob}</tbody></table></div>
       <div>
-        <div class="dcard"><div class="dh">Other Operating Departments</div>
-          <table class="dt"><tbody>${odb}</tbody></table></div>
-        <div class="dcard" style="margin-top:16px"><div class="dh">F&B Split</div>
-          <table class="dt"><tbody>${fbb}</tbody></table></div>
+        <div class="dcard"><div class="dh">Other Operating Departments</div><table class="dt"><tbody>${odb}</tbody></table></div>
+        <div class="dcard" style="margin-top:16px"><div class="dh">F&B Split</div><table class="dt"><tbody>${fbb}</tbody></table></div>
       </div>
     </div>`;
 }
 
-function render(d){
-  const tot=findRow(d,'Total Hotel Revenue');
-  const dateStr=(d.report_date||'').replace(',',', ');
-  const tr=d.daily_trend||[];
-  const chart=tr.length?lineChart(tr,'total','var(--accent)'):null;
-  document.getElementById('app').innerHTML=`
-    <div class="titlerow"><h1>Daily Business Report</h1><span class="badge ok"><span class="dot"></span>Owner Report · Reconciled</span></div>
-    <div class="sub">${dateStr} &nbsp;·&nbsp; ${d.property}</div>
-    <div class="hero">
-      ${heroCard('today','Total Hotel Revenue — Today',tot,'today')}
-      ${heroCard('','Month to Date',tot,'mtd')}
-      ${heroCard('','Year to Date',tot,'ytd')}
-    </div>
-
-    ${insightsBlock(d.insights)}
-
-    <div class="sechead"><h2>Charts</h2></div>
-    <div class="charts">
-      ${chart?`<div class="card"><h3>Total Revenue — Month to Date</h3><div class="chartwrap" id="cw">${chart.svg}<div class="tt" id="tt"></div></div></div>`:''}
-      <div class="crow">
-        <div class="card"><h3>Revenue Mix — Today</h3>${mixBar(d.revenue_mix||{})}</div>
-        <div class="card spark"><h3>Occupancy — MTD</h3><div class="big">${tr.length?(tr[tr.length-1].occupancy*100).toFixed(0)+'%':'—'}</div><div class="cap">latest of ${tr.length} days</div>${tr.length?sparkline(tr,'occupancy','var(--good)'):''}</div>
-        <div class="card spark"><h3>ADR — MTD</h3><div class="big">${tr.length?rs(tr[tr.length-1].adr):'—'}</div><div class="cap">latest of ${tr.length} days</div>${tr.length?sparkline(tr,'adr','var(--blue)'):''}</div>
-      </div>
-    </div>
-
-    ${detailBlock(d)}
-
-    <div class="sechead"><h2>Full Owner Report</h2></div>
-    <div class="reportwrap">
-      <table class="report">
-        <thead>
-          <tr class="grp"><th class="stick" rowspan="2">Line Item</th><th colspan="3">Today</th><th colspan="4" class="g-mtd divg">Month to Date</th><th colspan="4" class="g-ytd divg">Year to Date</th></tr>
-          <tr class="subh"><th>Actual</th><th>Budget</th><th>Var</th><th class="divg">Actual</th><th>Last Yr</th><th>Budget</th><th>Var</th><th class="divg">Actual</th><th>Last Yr</th><th>Budget</th><th>Var</th></tr>
-        </thead>
-        <tbody>${d.sections.map(sectionRows).join('')}</tbody>
-      </table>
-    </div>
-    <div class="hint">Scroll the table sideways for Month-to-Date and Year-to-Date. Variance is vs budget (green above, pink below).</div>`;
-  document.getElementById('stamp').textContent='Updated '+new Date(d.generated_at).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-
-  if(chart){
-    const cw=document.getElementById('cw'),tt=document.getElementById('tt'),svg=cw.querySelector('svg'),cr=svg.querySelector('#cr'),vb=svg.viewBox.baseVal;
-    cw.querySelectorAll('.hit').forEach(h=>h.addEventListener('mouseenter',()=>{
-      const i=+h.dataset.i,dd=tr[i],px=chart.x(i),py=chart.y(dd.total),rect=cw.getBoundingClientRect();
-      cr.setAttribute('x1',px);cr.setAttribute('x2',px);cr.setAttribute('opacity','1');
-      tt.style.left=(px/vb.width*rect.width)+'px';tt.style.top=(py/vb.height*rect.height)+'px';tt.style.opacity='1';
-      tt.innerHTML=`${MONTHS[dd.month]} ${dd.day} · <b>${rs(dd.total)}</b><br>Occ ${(dd.occupancy*100).toFixed(0)}% · ADR ${rs(dd.adr)}`;
-    }));
-    cw.addEventListener('mouseleave',()=>{tt.style.opacity='0';cr.setAttribute('opacity','0');});
-  }
+/* ---------- owner report table (latest only) ---------- */
+const fmtR=(v,k)=>{if(v==null)return '—';if(k==='pct')return (v*100).toFixed(1)+'%';if(k==='number')return INR.format(Math.round(v));return '₹'+INR.format(Math.round(v));};
+const vcell=v=>{if(v==null)return '<td class="num">—</td>';const up=v>=0;return `<td class="num var ${up?'up':'down'}">${(up?'+':'')+(v*100).toFixed(0)}%</td>`;};
+function ownerTable(){
+  const body=DATA.sections.map(s=>{
+    let out=`<tr class="sec"><td colspan="12">${s.title}</td></tr>`;
+    out+=s.rows.map(r=>{const k=r.kind,isTot=/Total Hotel Revenue/.test(r.label);
+      return `<tr class="${isTot?'total':''}"><td class="stick">${r.label}</td>
+        <td class="num">${fmtR(r.today_ty,k)}</td><td class="num">${fmtR(r.today_bud,k)}</td>${vcell(r.today_var)}
+        <td class="num divg">${fmtR(r.mtd_ty,k)}</td><td class="num">${fmtR(r.mtd_ly,k)}</td><td class="num">${fmtR(r.mtd_bud,k)}</td>${vcell(r.mtd_var)}
+        <td class="num divg">${fmtR(r.ytd_ty,k)}</td><td class="num">${fmtR(r.ytd_ly,k)}</td><td class="num">${fmtR(r.ytd_bud,k)}</td>${vcell(r.ytd_var)}</tr>`;}).join('');
+    return out;}).join('');
+  return `<div class="sechead"><h2>Full Owner Report</h2><span class="note">Today vs Budget · MTD &amp; YTD vs Last Year and Budget</span></div>
+    <div class="reportwrap"><table class="report"><thead>
+      <tr class="grp"><th class="stick" rowspan="2">Line Item</th><th colspan="3">Today</th><th colspan="4" class="g-mtd divg">Month to Date</th><th colspan="4" class="g-ytd divg">Year to Date</th></tr>
+      <tr class="subh"><th>Actual</th><th>Budget</th><th>Var</th><th class="divg">Actual</th><th>Last Yr</th><th>Budget</th><th>Var</th><th class="divg">Actual</th><th>Last Yr</th><th>Budget</th><th>Var</th></tr>
+    </thead><tbody>${body}</tbody></table></div>
+    <div class="hint">Scroll sideways for Month-to-Date and Year-to-Date. Variance vs budget (green above, pink below).</div>`;
 }
-function sectionRows(s){
-  let out=`<tr class="sec"><td colspan="12">${s.title}</td></tr>`;
-  out+=s.rows.map(r=>{const k=r.kind,isTot=/Total Hotel Revenue/.test(r.label);
-    return `<tr class="${isTot?'total':''}"><td class="stick">${r.label}</td>
-      <td class="num">${fmt(r.today_ty,k)}</td><td class="num">${fmt(r.today_bud,k)}</td>${vcell(r.today_var)}
-      <td class="num divg">${fmt(r.mtd_ty,k)}</td><td class="num">${fmt(r.mtd_ly,k)}</td><td class="num">${fmt(r.mtd_bud,k)}</td>${vcell(r.mtd_var)}
-      <td class="num divg">${fmt(r.ytd_ty,k)}</td><td class="num">${fmt(r.ytd_ly,k)}</td><td class="num">${fmt(r.ytd_bud,k)}</td>${vcell(r.ytd_var)}</tr>`;
-  }).join('');
-  return out;
+
+/* ---------- render ---------- */
+function insightsBlock(ins){
+  const li=a=>a.map(x=>`<li><div class="t">${x.title}</div><div class="d">${x.detail}</div></li>`).join('');
+  return `<div class="sechead"><span class="aichip">✦ AI</span><h2>Insights &amp; Action Items</h2></div>
+    <div class="summary"><div class="ic">✦</div><div class="tx">${ins.summary||''}</div></div>
+    <div class="icards">
+      <div class="icard win"><div class="ih">▲ Highlights</div><ul>${li(ins.highlights)||'<li><div class="d">—</div></li>'}</ul></div>
+      <div class="icard watch"><div class="ih">◆ Watch</div><ul>${li(ins.watch)||'<li><div class="d">Nothing notable.</div></li>'}</ul></div>
+      <div class="icard act"><div class="ih">✓ Action Items</div><ul>${li(ins.action_items)||'<li><div class="d">No actions flagged.</div></li>'}</ul></div>
+    </div>`;
+}
+function heroBlock(iso){
+  const oi=DATA.days[iso].operating_income;const ly=DATA.days[lyIso(iso)];
+  let vs='vs same day last year: n/a';
+  if(ly){const p=(oi.total_hotel_revenue-ly.operating_income.total_hotel_revenue)/ly.operating_income.total_hotel_revenue;const up=p>=0;
+    vs=`<span style="color:${up?'var(--good)':'var(--bad)'}">${up?'▲':'▼'} ${pctStr(p)} vs 2025</span>`;}
+  return `<div class="hero">
+    <div class="hcard today"><div class="lbl">Total Hotel Revenue</div><div class="v">${rs(oi.total_hotel_revenue)}</div><div class="vs">${vs}</div></div>
+    <div class="hcard"><div class="lbl">Room Revenue</div><div class="v">${rs(oi.room_revenue)}</div></div>
+    <div class="hcard"><div class="lbl">F&amp;B Revenue</div><div class="v">${rs(oi.fb_revenue)}</div></div>
+    <div class="hcard"><div class="lbl">Other Op. Dept.</div><div class="v">${rs(oi.ood_revenue)}</div></div>
+  </div>`;
+}
+function renderView(iso){
+  const day=DATA.days[iso];const isLatest=iso===DATA.latest_date;
+  const ins=isLatest?DATA.insights:dayInsights(iso);
+  const series=monthSeries(iso);const selDay=dObj(iso).getDate();
+  const chart=lineChart(series,'total_hotel_revenue','var(--accent)',selDay);
+  const occNow=(day.operating_income.occupancy*100).toFixed(0);
+  const view=`
+    ${heroBlock(iso)}
+    ${insightsBlock(ins)}
+    <div class="sechead"><h2>Charts</h2><span class="note">${MONTHS[dObj(iso).getMonth()+1]} ${dObj(iso).getFullYear()}</span></div>
+    <div class="card"><h3>Total Revenue — ${MONTHS[dObj(iso).getMonth()+1]} ${dObj(iso).getFullYear()}</h3><div class="chartwrap" id="cw">${chart.svg}<div class="tt" id="tt"></div></div></div>
+    <div class="crow">
+      <div class="card"><h3>Revenue Mix — Selected Day</h3>${mixBar(day.operating_income)}</div>
+      <div class="card spark"><h3>Occupancy — Month</h3><div class="big">${occNow}%</div><div class="cap">selected day</div>${sparkline(series,'occupancy','var(--good)')}</div>
+      <div class="card spark"><h3>ADR — Month</h3><div class="big">${rs(day.operating_income.adr)}</div><div class="cap">selected day</div>${sparkline(series,'adr','var(--blue)')}</div>
+    </div>
+    ${detailBlock(day)}
+    ${isLatest?ownerTable():'<div class="hint" style="margin-top:22px">The full Budget / MTD / YTD owner report is generated for the latest reporting day ('+labelDate(DATA.latest_date)+'). For earlier days, figures above compare to the same day last year.</div>'}
+  `;
+  document.getElementById('view').innerHTML=view;
+
+  // chart hover
+  const cw=document.getElementById('cw'),tt=document.getElementById('tt'),svg=cw.querySelector('svg'),cr=svg.querySelector('#cr'),vb=svg.viewBox.baseVal;
+  cw.querySelectorAll('.hit').forEach(h=>h.addEventListener('mouseenter',()=>{
+    const i=+h.dataset.i,dd=series[i],px=chart.x(i),py=chart.y(dd.total_hotel_revenue),rect=cw.getBoundingClientRect();
+    cr.setAttribute('x1',px);cr.setAttribute('x2',px);cr.setAttribute('opacity','1');
+    tt.style.left=(px/vb.width*rect.width)+'px';tt.style.top=(py/vb.height*rect.height)+'px';tt.style.opacity='1';
+    tt.innerHTML=`${MONTHS[dObj(dd.iso).getMonth()+1]} ${dd.day} · <b>${rs(dd.total_hotel_revenue)}</b><br>Occ ${(dd.occupancy*100).toFixed(0)}% · ADR ${rs(dd.adr)}`;
+  }));
+  cw.addEventListener('mouseleave',()=>{tt.style.opacity='0';cr.setAttribute('opacity','0');});
+}
+function render(d){
+  DATA=d;
+  const dates=Object.keys(d.days).sort().reverse();
+  const y26=dates.filter(x=>x.startsWith('2026')),y25=dates.filter(x=>x.startsWith('2025'));
+  const opt=arr=>arr.map(iso=>`<option value="${iso}">${labelDate(iso)}</option>`).join('');
+  const picker=`<div class="picker"><label>View date</label>
+    <select id="dsel">
+      ${y26.length?`<optgroup label="This Year (2026)">${opt(y26)}</optgroup>`:''}
+      ${y25.length?`<optgroup label="Last Year (2025)">${opt(y25)}</optgroup>`:''}
+    </select></div>`;
+  document.getElementById('app').innerHTML=`
+    <div class="titlerow"><h1>Daily Business Report</h1>${picker}</div>
+    <div class="sub"><span class="badge ok"><span class="dot"></span>Reconciled</span><span>${d.property}</span><span>·</span><span>${dates.length} days available</span></div>
+    <div id="view"></div>`;
+  document.getElementById('stamp').textContent='Updated '+new Date(d.generated_at).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const sel=document.getElementById('dsel');
+  sel.value=d.latest_date;
+  sel.addEventListener('change',()=>renderView(sel.value));
+  renderView(d.latest_date);
 }
 fetch('./data.json?ts='+Date.now()).then(r=>{if(!r.ok)throw 0;return r.json()}).then(render)
-  .catch(()=>{document.getElementById('app').innerHTML='<div class="err">No report data yet. The daily automation will publish figures here once reports are received.</div>';});
+  .catch(()=>{document.getElementById('app').innerHTML='<div class="err">No report data yet.</div>';});
 </script>
 </body>
 </html>
