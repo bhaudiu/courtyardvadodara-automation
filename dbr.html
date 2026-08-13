@@ -247,8 +247,8 @@ function detailBlock(day){
 /* ---------- owner report table (latest only) ---------- */
 const fmtR=(v,k)=>{if(v==null)return '—';if(k==='pct')return (v*100).toFixed(1)+'%';if(k==='number')return INR.format(Math.round(v));return '₹'+INR.format(Math.round(v));};
 const vcell=v=>{if(v==null)return '<td class="num">—</td>';const up=v>=0;return `<td class="num var ${up?'up':'down'}">${(up?'+':'')+(v*100).toFixed(0)}%</td>`;};
-function ownerTable(){
-  const body=DATA.sections.map(s=>{
+function ownerTable(sections){
+  const body=sections.map(s=>{
     let out=`<tr class="sec"><td colspan="12">${s.title}</td></tr>`;
     out+=s.rows.map(r=>{const k=r.kind,isTot=/Total Hotel Revenue/.test(r.label);
       return `<tr class="${isTot?'total':''}"><td class="stick">${r.label}</td>
@@ -262,6 +262,53 @@ function ownerTable(){
       <tr class="subh"><th>Actual</th><th>Budget</th><th>Var</th><th class="divg">Actual</th><th>Last Yr</th><th>Budget</th><th>Var</th><th class="divg">Actual</th><th>Last Yr</th><th>Budget</th><th>Var</th></tr>
     </thead><tbody>${body}</tbody></table></div>
     <div class="hint">Scroll sideways for Month-to-Date and Year-to-Date. Variance vs budget (green above, pink below).</div>`;
+}
+
+/* ---------- computed full report for any date (Today + MTD vs last year) ---------- */
+function accumulate(list){
+  const a={available:0,occupied:0,room_rev:0,fb_rev:0,ood_rev:0,total_rev:0,covers:0,rnl:0,bq:0,ird:0,outlets:{},ood:{}};
+  list.forEach(d=>{const oi=d.operating_income;
+    a.available+=oi.total_rooms||0;a.occupied+=oi.occupied||0;a.room_rev+=oi.room_revenue||0;
+    a.fb_rev+=oi.fb_revenue||0;a.ood_rev+=oi.ood_revenue||0;a.total_rev+=oi.total_hotel_revenue||0;a.covers+=oi.total_covers||0;
+    a.rnl+=d.fb_details.total_rnl||0;a.bq+=d.fb_details.banquet_other||0;a.ird+=d.fb_details.ird||0;
+    d.outlet_details.forEach(o=>{const x=a.outlets[o.name]=a.outlets[o.name]||{rev:0,cov:0};x.rev+=o.revenue||0;x.cov+=o.covers||0;});
+    d.ood.forEach(o=>{a.ood[o.name]=(a.ood[o.name]||0)+(o.revenue||0);});
+  });return a;
+}
+function monthDaysUpTo(y,m,dd){return Object.keys(DATA.days).filter(k=>+k.slice(0,4)===y&&+k.slice(5,7)===m&&+k.slice(8,10)<=dd).map(k=>DATA.days[k]);}
+function computedReport(iso){
+  const day=DATA.days[iso],y=+iso.slice(0,4),m=+iso.slice(5,7),dd=+iso.slice(8,10),ly=DATA.days[lyIso(iso)];
+  const tyT=accumulate([day]),lyT=ly?accumulate([ly]):null,tyM=accumulate(monthDaysUpTo(y,m,dd)),lyM=ly?accumulate(monthDaysUpTo(y-1,m,dd)):null;
+  const R=(label,kind,fn)=>({label,kind,today_ty:fn(tyT),today_ly:lyT?fn(lyT):null,mtd_ty:fn(tyM),mtd_ly:lyM?fn(lyM):null});
+  const rate=(n,d)=>a=>{const den=d(a);return den?n(a)/den:null;};
+  const oi=[R('Total Rooms in Hotel','number',a=>a.available),R('Occupied Rooms','number',a=>a.occupied),
+    R('Occupancy (%)','pct',rate(a=>a.occupied,a=>a.available)),R('ADR','currency',rate(a=>a.room_rev,a=>a.occupied)),
+    R('RevPar','currency',rate(a=>a.room_rev,a=>a.available)),R('Total Covers','number',a=>a.covers),
+    R('Total APC','currency',rate(a=>a.fb_rev,a=>a.covers)),R('Room Revenue','currency',a=>a.room_rev),
+    R('F&B Revenue','currency',a=>a.fb_rev),R('OOD Revenue','currency',a=>a.ood_rev),R('Total Hotel Revenue','currency',a=>a.total_rev)];
+  const fb=[R('Total RNL','currency',a=>a.rnl),R('Banquet & Other Than F&B','currency',a=>a.bq),R('IRD','currency',a=>a.ird)];
+  const outlets=[];day.outlet_details.forEach(o=>{const n=o.name;
+    outlets.push(R(n+' - No. of Cvrs','number',a=>a.outlets[n]?a.outlets[n].cov:null));
+    outlets.push(R(n+' - Avg. Check/Cvr','currency',a=>{const x=a.outlets[n];return x&&x.cov?x.rev/x.cov:null;}));
+    outlets.push(R(n+' - Rev.','currency',a=>a.outlets[n]?a.outlets[n].rev:null));});
+  const ood=day.ood.map(o=>R(o.name,'currency',a=>a.ood[o.name]!=null?a.ood[o.name]:null));
+  return [{title:'Operating Income',rows:oi},{title:'F&B Details',rows:fb},{title:'Outlet Details',rows:outlets},{title:'Other Operating Departments',rows:ood}];
+}
+function ownerTableComputed(sections){
+  const vc=(ty,ly)=>{if(ty==null||ly==null||ly===0)return '<td class="num">—</td>';const p=(ty-ly)/Math.abs(ly),up=p>=0;return `<td class="num var ${up?'up':'down'}">${(up?'+':'')+(p*100).toFixed(0)}%</td>`;};
+  const body=sections.map(s=>{
+    let out=`<tr class="sec"><td colspan="7">${s.title}</td></tr>`;
+    out+=s.rows.map(r=>{const k=r.kind,isTot=/Total Hotel Revenue/.test(r.label);
+      return `<tr class="${isTot?'total':''}"><td class="stick">${r.label}</td>
+        <td class="num">${fmtR(r.today_ty,k)}</td><td class="num">${fmtR(r.today_ly,k)}</td>${vc(r.today_ty,r.today_ly)}
+        <td class="num divg">${fmtR(r.mtd_ty,k)}</td><td class="num">${fmtR(r.mtd_ly,k)}</td>${vc(r.mtd_ty,r.mtd_ly)}</tr>`;}).join('');
+    return out;}).join('');
+  return `<div class="sechead"><h2>Full Owner Report</h2><span class="note">Today &amp; Month-to-Date vs same period last year</span></div>
+    <div class="reportwrap"><table class="report" style="min-width:720px"><thead>
+      <tr class="grp"><th class="stick" rowspan="2">Line Item</th><th colspan="3">Today</th><th colspan="3" class="g-mtd divg">Month to Date</th></tr>
+      <tr class="subh"><th>Actual</th><th>Last Yr</th><th>Var</th><th class="divg">Actual</th><th>Last Yr</th><th>Var</th></tr>
+    </thead><tbody>${body}</tbody></table></div>
+    <div class="hint">Budget and Year-to-Date columns appear on the latest reporting day (from the live sheet). For earlier days this compares to the same period last year.</div>`;
 }
 
 /* ---------- render ---------- */
@@ -304,7 +351,7 @@ function renderView(iso){
       <div class="card spark"><h3>ADR — Month</h3><div class="big">${rs(day.operating_income.adr)}</div><div class="cap">selected day</div>${sparkline(series,'adr','var(--blue)')}</div>
     </div>
     ${detailBlock(day)}
-    ${isLatest?ownerTable():'<div class="hint" style="margin-top:22px">The full Budget / MTD / YTD owner report is generated for the latest reporting day ('+labelDate(DATA.latest_date)+'). For earlier days, figures above compare to the same day last year.</div>'}
+    ${day.report?ownerTable(day.report):ownerTableComputed(computedReport(iso))}
   `;
   document.getElementById('view').innerHTML=view;
 
