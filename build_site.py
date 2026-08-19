@@ -233,17 +233,35 @@ def main():
     anchor_iso = store["anchor_date"]
     anchor_sections = store["anchor_sections"]
 
-    # fold in a freshly fetched day, if all 3 reports are present
-    if all(os.path.exists(f) for f in (MF, TB, DO)):
+    # fold in EVERY complete report set that fetch_email.py downloaded (backfills many days)
+    added = []
+    inbox = "inbox"
+    if os.path.isdir(inbox):
+        for d in sorted(os.listdir(inbox)):
+            p = os.path.join(inbox, d)
+            mf, tb, do = os.path.join(p, MF), os.path.join(p, TB), os.path.join(p, DO)
+            if not all(os.path.exists(x) for x in (mf, tb, do)):
+                continue
+            try:
+                day = build_grr_day(mf, tb, do)
+                iso = day["business_date"]
+                days[iso] = normalize(day)
+                added.append(iso)
+                print(f"  parsed {iso} (reconciliation diff {day['totals']['diff']:.2f})")
+            except Exception as e:
+                print(f"  parse error in {d}: {e}")
+    # also accept a single set dropped at repo root (manual/testing)
+    elif all(os.path.exists(f) for f in (MF, TB, DO)):
         try:
             day = build_grr_day(MF, TB, DO)
-            iso = day["business_date"]
-            days[iso] = normalize(day)
-            store["days"] = days
-            json.dump(store, open(STORE, "w"), indent=0, default=str)
-            print(f"Added report for {iso} (reconciliation diff {day['totals']['diff']:.2f})")
+            days[day["business_date"]] = normalize(day)
+            added.append(day["business_date"])
         except Exception as e:
-            print(f"parse error (keeping existing store): {e}")
+            print(f"  parse error: {e}")
+    if added:
+        store["days"] = days
+        json.dump(store, open(STORE, "w"), indent=0, default=str)
+        print(f"Added/updated {len(set(added))} day(s): {sorted(set(added))}")
 
     latest = max(days)
     reports = {}
