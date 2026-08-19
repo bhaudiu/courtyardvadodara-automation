@@ -37,7 +37,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No data change."
           else
-            git commit -m "Update DBR data [skip ci]"
+            git commit -m "Update DBR data"
             git pull --rebase --autostash origin main || true
             git push || echo "Push skipped; will sync next run."
           fi
