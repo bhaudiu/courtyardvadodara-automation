@@ -1,0 +1,43 @@
+name: Refresh Courtyard DBR
+on:
+  workflow_dispatch:
+  push:
+    paths: ["*.py", "requirements.txt", "dbr.html", "index.html", ".github/workflows/deploy.yml"]
+  schedule:
+    - cron: "0 * * * *"   # every hour — catches the reports whenever they arrive (24h), not a fixed time
+permissions:
+  contents: write
+concurrency:
+  group: cyv-dbr
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Fetch daily reports from Gmail (IMAP)
+        if: github.event_name != 'push'
+        run: python3 fetch_email.py
+        env:
+          IMAP_HOST: ${{ secrets.IMAP_HOST }}
+          IMAP_USER: ${{ secrets.IMAP_USER }}
+          IMAP_PASS: ${{ secrets.IMAP_PASS }}
+      - name: Build dashboard data
+        run: python3 build_site.py
+      - name: Commit updated data (Cloudflare Pages auto-deploys)
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add data.json store.json
+          if git diff --cached --quiet; then
+            echo "No data change."
+          else
+            git commit -m "Update DBR data [skip ci]"
+            git pull --rebase --autostash origin main || true
+            git push || echo "Push skipped; will sync next run."
+          fi
