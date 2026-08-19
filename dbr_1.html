@@ -541,6 +541,7 @@ function selectTab(t){
   if(t==='dbr')renderView(PDATE);
   else if(t==='hf')renderHF();
   else renderPickup();
+  try{if(location.hash!=='#'+t)history.replaceState(null,'','#'+t);}catch(e){}
 }
 function render(d){
   DATA=d;
@@ -557,7 +558,9 @@ function render(d){
     <div id="view"></div>`;
   document.getElementById('stamp').textContent='Updated '+new Date(d.generated_at).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
   document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>selectTab(b.dataset.tab));
-  selectTab('dbr');
+  const h=(location.hash||'').replace('#','');
+  selectTab(['dbr','hf','pickup'].includes(h)?h:'dbr');
+  window.addEventListener('hashchange',()=>{const x=(location.hash||'').replace('#','');if(['dbr','hf','pickup'].includes(x)&&x!==TAB)selectTab(x);});
 }
 fetch('./data.json?ts='+Date.now()).then(r=>{if(!r.ok)throw 0;return r.json()}).then(d=>{
   render(d);
