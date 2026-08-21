@@ -79,6 +79,12 @@
   .chleg span{display:inline-flex;align-items:center;gap:7px}
   .chleg i{width:16px;height:0;border-top:3px solid currentColor;display:inline-block;border-radius:2px}
   .chleg i.dash{border-top-style:dashed}
+  .chhead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+  .chhead h3{margin:0}
+  .cbtns{display:inline-flex;gap:3px;background:var(--head);border:1px solid var(--line);border-radius:9px;padding:3px}
+  .cbtn{background:none;border:none;color:var(--muted);font-size:12px;font-weight:600;padding:6px 12px;border-radius:6px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s}
+  .cbtn:hover{color:var(--text)}
+  .cbtn.on{background:linear-gradient(135deg,var(--accent),#7a0d29);color:#fff}
 
   .mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:18px}
   .mgrid>div{background:var(--panel);padding:13px 16px}
@@ -200,29 +206,38 @@ function dayInsights(iso){
 }
 
 /* ---------- charts ---------- */
-function totRevBudget(day){const r=day.report;if(!r)return null;for(const s of r)for(const row of s.rows)if(/Total Hotel Revenue/.test(row.label))return row.today_bud;return null;}
+function budFromReport(day,label){const r=day.report;if(!r)return null;for(const s of r)for(const row of s.rows)if(row.label&&row.label.indexOf(label)===0)return row.today_bud;return null;}
+const METRICS={
+  total:{key:'total_hotel_revenue',ly:'ly_total',bud:'bud_total',label:'Total'},
+  room:{key:'room_revenue',ly:'ly_room',bud:'bud_room',label:'Room'},
+  fb:{key:'fb_revenue',ly:'ly_fb',bud:'bud_fb',label:'F&B'},
+  other:{key:'ood_revenue',ly:'ly_ood',bud:'bud_ood',label:'Other'},
+};
+let SELMETRIC='total';
 function monthSeries(iso){
   const pre=iso.slice(0,7);
   return Object.keys(DATA.days).filter(k=>k.slice(0,7)===pre).sort()
-    .map(k=>{const day=DATA.days[k],lyk=lyIso(k);
+    .map(k=>{const day=DATA.days[k],lyk=lyIso(k),lyd=DATA.days[lyk]?DATA.days[lyk].operating_income:null;
       return {iso:k,day:dObj(k).getDate(),...day.operating_income,
-        ly:DATA.days[lyk]?DATA.days[lyk].operating_income.total_hotel_revenue:null,
-        bud:totRevBudget(day)};});
+        ly_total:lyd?lyd.total_hotel_revenue:null, ly_room:lyd?lyd.room_revenue:null,
+        ly_fb:lyd?lyd.fb_revenue:null, ly_ood:lyd?lyd.ood_revenue:null,
+        bud_total:budFromReport(day,'Total Hotel Revenue'), bud_room:budFromReport(day,'Room Revenue'),
+        bud_fb:budFromReport(day,'F&B Revenue'), bud_ood:budFromReport(day,'OOD Revenue')};});
 }
 const CLR_LY='#4f9fd0',CLR_BUD='#c99a3f';
-function lineChart(series,valkey,color,selDay){
+function lineChart(series,m,color,selDay){
   const W=640,H=200,pl=48,pr=12,pt=14,pb=24;
-  const allv=[];series.forEach(d=>{if(d[valkey]!=null)allv.push(d[valkey]);if(d.ly!=null)allv.push(d.ly);if(d.bud!=null)allv.push(d.bud);});
+  const allv=[];series.forEach(d=>{if(d[m.key]!=null)allv.push(d[m.key]);if(d[m.ly]!=null)allv.push(d[m.ly]);if(d[m.bud]!=null)allv.push(d[m.bud]);});
   const ymax=Math.max(...allv)*1.08||1;
   const x=i=>pl+(series.length<2?0:i/(series.length-1)*(W-pl-pr));
   const y=v=>pt+(1-v/ymax)*(H-pt-pb);
   const pathFor=key=>{let d='',pen=false;series.forEach((s,i)=>{const v=s[key];if(v==null){pen=false;return;}d+=`${pen?'L':'M'}${x(i).toFixed(1)},${y(v).toFixed(1)} `;pen=true;});return d.trim();};
-  const line=pathFor(valkey);
+  const line=pathFor(m.key);
   const area=`${line} L${x(series.length-1).toFixed(1)},${H-pb} L${x(0).toFixed(1)},${H-pb} Z`;
-  const budPath=pathFor('bud'),lyPath=pathFor('ly');
+  const budPath=pathFor(m.bud),lyPath=pathFor(m.ly);
   let grid='';for(let g=0;g<=3;g++){const gv=ymax*g/3,gy=y(gv);grid+=`<line x1="${pl}" y1="${gy}" x2="${W-pr}" y2="${gy}" stroke="#20293466"/><text x="${pl-7}" y="${gy+4}" text-anchor="end" fill="var(--faint)" font-size="10">${(gv/1e5).toFixed(1)}L</text>`;}
   let xl='';series.forEach((d,i)=>{if(series.length<=16||i%2===0)xl+=`<text x="${x(i)}" y="${H-7}" text-anchor="middle" fill="${d.day===selDay?'var(--accent-soft)':'var(--faint)'}" font-size="10" font-weight="${d.day===selDay?'700':'400'}">${d.day}</text>`;});
-  const dots=series.map((d,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(d[valkey]).toFixed(1)}" r="${d.day===selDay?4.5:2.6}" fill="${d.day===selDay?'var(--accent-soft)':'#0f1419'}" stroke="${color}" stroke-width="2"/>`).join('');
+  const dots=series.map((d,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(d[m.key]).toFixed(1)}" r="${d.day===selDay?4.5:2.6}" fill="${d.day===selDay?'var(--accent-soft)':'#0f1419'}" stroke="${color}" stroke-width="2"/>`).join('');
   const hit=series.map((d,i)=>`<rect x="${(x(i)-(W-pl-pr)/series.length/2).toFixed(1)}" y="${pt}" width="${((W-pl-pr)/series.length).toFixed(1)}" height="${H-pt-pb}" fill="transparent" data-i="${i}" class="hit"/>`).join('');
   const svg=`<svg viewBox="0 0 ${W} ${H}"><defs><linearGradient id="g1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity="0.26"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>${grid}<path d="${area}" fill="url(#g1)"/>`
     +(budPath?`<path d="${budPath}" fill="none" stroke="${CLR_BUD}" stroke-width="1.7" stroke-dasharray="5 4" opacity="0.95"/>`:'')
@@ -365,15 +380,13 @@ function heroBlock(iso){
 function renderView(iso){
   const day=DATA.days[iso];const isLatest=iso===DATA.latest_date;
   const ins=isLatest?DATA.insights:dayInsights(iso);
-  const series=monthSeries(iso);const selDay=dObj(iso).getDate();
-  const chart=lineChart(series,'total_hotel_revenue','var(--accent)',selDay);
+  const series=monthSeries(iso);
   const occNow=(day.operating_income.occupancy*100).toFixed(0);
   const view=`
     ${heroBlock(iso)}
     ${insightsBlock(ins)}
     <div class="sechead"><h2>Charts</h2><span class="note">${MONTHS[dObj(iso).getMonth()+1]} ${dObj(iso).getFullYear()}</span></div>
-    <div class="card"><h3>Total Revenue — ${MONTHS[dObj(iso).getMonth()+1]} ${dObj(iso).getFullYear()}</h3><div class="chartwrap" id="cw">${chart.svg}<div class="tt" id="tt"></div></div>
-      <div class="chleg"><span style="color:var(--accent-soft)"><i></i>This Year</span><span style="color:${CLR_LY}"><i></i>Last Year</span><span style="color:${CLR_BUD}"><i class="dash"></i>Budget</span></div></div>
+    <div id="revchart"></div>
     <div class="crow">
       <div class="card"><h3>Revenue Mix — Selected Day</h3>${mixBar(day.operating_income)}</div>
       <div class="card spark"><h3>Occupancy — Month</h3><div class="big">${occNow}%</div><div class="cap">selected day</div>${sparkline(series,'occupancy','var(--good)')}</div>
@@ -383,17 +396,27 @@ function renderView(iso){
     ${day.report?ownerTable(day.report):ownerTableComputed(computedReport(iso))}
   `;
   document.getElementById('view').innerHTML=view;
-
-  // chart hover
+  drawChart(iso,series);
+}
+function drawChart(iso,series){
+  series=series||monthSeries(iso);
+  const selDay=dObj(iso).getDate(),m=METRICS[SELMETRIC];
+  const mo=MONTHS[dObj(iso).getMonth()+1],yr=dObj(iso).getFullYear();
+  const chart=lineChart(series,m,'var(--accent)',selDay);
+  const btns=Object.keys(METRICS).map(k=>`<button class="cbtn${k===SELMETRIC?' on':''}" data-m="${k}">${METRICS[k].label}</button>`).join('');
+  document.getElementById('revchart').innerHTML=`<div class="card">
+    <div class="chhead"><h3>${m.label} Revenue — ${mo} ${yr}</h3><div class="cbtns">${btns}</div></div>
+    <div class="chartwrap" id="cw">${chart.svg}<div class="tt" id="tt"></div></div>
+    <div class="chleg"><span style="color:var(--accent-soft)"><i></i>This Year</span><span style="color:${CLR_LY}"><i></i>Last Year</span><span style="color:${CLR_BUD}"><i class="dash"></i>Budget</span></div></div>`;
+  document.querySelectorAll('#revchart .cbtn').forEach(b=>b.onclick=()=>{SELMETRIC=b.dataset.m;drawChart(iso,series);});
   const cw=document.getElementById('cw'),tt=document.getElementById('tt'),svg=cw.querySelector('svg'),cr=svg.querySelector('#cr'),vb=svg.viewBox.baseVal;
   cw.querySelectorAll('.hit').forEach(h=>h.addEventListener('mouseenter',()=>{
-    const i=+h.dataset.i,dd=series[i],px=chart.x(i),py=chart.y(dd.total_hotel_revenue),rect=cw.getBoundingClientRect();
+    const i=+h.dataset.i,dd=series[i],px=chart.x(i),py=chart.y(dd[m.key]),rect=cw.getBoundingClientRect();
     cr.setAttribute('x1',px);cr.setAttribute('x2',px);cr.setAttribute('opacity','1');
     tt.style.left=(px/vb.width*rect.width)+'px';tt.style.top=(py/vb.height*rect.height)+'px';tt.style.opacity='1';
-    tt.innerHTML=`${MONTHS[dObj(dd.iso).getMonth()+1]} ${dd.day} · <b>${rs(dd.total_hotel_revenue)}</b>`
-      +(dd.ly!=null?`<br><span style="color:${CLR_LY}">LY ${rs(dd.ly)}</span>`:'')
-      +(dd.bud!=null?`<br><span style="color:${CLR_BUD}">Budget ${rs(dd.bud)}</span>`:'')
-      +`<br>Occ ${(dd.occupancy*100).toFixed(0)}% · ADR ${rs(dd.adr)}`;
+    tt.innerHTML=`${mo} ${dd.day} · <b>${rs(dd[m.key])}</b>`
+      +(dd[m.ly]!=null?`<br><span style="color:${CLR_LY}">LY ${rs(dd[m.ly])}</span>`:'')
+      +(dd[m.bud]!=null?`<br><span style="color:${CLR_BUD}">Budget ${rs(dd[m.bud])}</span>`:'');
   }));
   cw.addEventListener('mouseleave',()=>{tt.style.opacity='0';cr.setAttribute('opacity','0');});
 }
