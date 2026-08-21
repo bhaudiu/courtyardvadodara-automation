@@ -81,7 +81,7 @@
   .chleg i.dash{border-top-style:dashed}
   .chhead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
   .chhead h3{margin:0}
-  .cbtns{display:inline-flex;gap:3px;background:var(--head);border:1px solid var(--line);border-radius:9px;padding:3px}
+  .cbtns{display:inline-flex;flex-wrap:wrap;gap:3px;background:var(--head);border:1px solid var(--line);border-radius:9px;padding:3px}
   .cbtn{background:none;border:none;color:var(--muted);font-size:12px;font-weight:600;padding:6px 12px;border-radius:6px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s}
   .cbtn:hover{color:var(--text)}
   .cbtn.on{background:linear-gradient(135deg,var(--accent),#7a0d29);color:#fff}
@@ -207,22 +207,33 @@ function dayInsights(iso){
 
 /* ---------- charts ---------- */
 function budFromReport(day,label){const r=day.report;if(!r)return null;for(const s of r)for(const row of s.rows)if(row.label&&row.label.indexOf(label)===0)return row.today_bud;return null;}
+function oodRev(day,name){const o=(day.ood||[]).find(x=>x.name===name);return o?o.revenue:null;}
+function fbv(day,key){return day.fb_details?day.fb_details[key]:null;}
 const METRICS={
-  total:{key:'total_hotel_revenue',ly:'ly_total',bud:'bud_total',label:'Total'},
-  room:{key:'room_revenue',ly:'ly_room',bud:'bud_room',label:'Room'},
-  fb:{key:'fb_revenue',ly:'ly_fb',bud:'bud_fb',label:'F&B'},
-  other:{key:'ood_revenue',ly:'ly_ood',bud:'bud_ood',label:'Other'},
+  total:{key:'total_hotel_revenue',ly:'ly_total',bud:'bud_total',label:'Total',title:'Total Revenue'},
+  room:{key:'room_revenue',ly:'ly_room',bud:'bud_room',label:'Room',title:'Room Revenue'},
+  fb:{key:'fb_revenue',ly:'ly_fb',bud:'bud_fb',label:'F&B',title:'F&B Revenue'},
+  rnl:{key:'rnl',ly:'ly_rnl',bud:'bud_rnl',label:'812 CE Rest.',title:'812 CE Restaurant (RNL)'},
+  banq:{key:'banq',ly:'ly_banq',bud:'bud_banq',label:'Banquet',title:'Banquet Revenue'},
+  wine:{key:'wine',ly:'ly_wine',bud:'bud_wine',label:'Wine Shop',title:'Wine Shop Revenue'},
+  spa:{key:'spa',ly:'ly_spa',bud:'bud_spa',label:'Spa',title:'Spa Revenue'},
 };
 let SELMETRIC='total';
 function monthSeries(iso){
   const pre=iso.slice(0,7);
   return Object.keys(DATA.days).filter(k=>k.slice(0,7)===pre).sort()
-    .map(k=>{const day=DATA.days[k],lyk=lyIso(k),lyd=DATA.days[lyk]?DATA.days[lyk].operating_income:null;
+    .map(k=>{const day=DATA.days[k],lyk=lyIso(k),lyDay=DATA.days[lyk]||null,lyd=lyDay?lyDay.operating_income:null;
       return {iso:k,day:dObj(k).getDate(),...day.operating_income,
+        rnl:fbv(day,'total_rnl'), banq:fbv(day,'banquet_other'),
+        wine:oodRev(day,'Wine Shop'), spa:oodRev(day,'Spa'),
         ly_total:lyd?lyd.total_hotel_revenue:null, ly_room:lyd?lyd.room_revenue:null,
-        ly_fb:lyd?lyd.fb_revenue:null, ly_ood:lyd?lyd.ood_revenue:null,
+        ly_fb:lyd?lyd.fb_revenue:null,
+        ly_rnl:lyDay?fbv(lyDay,'total_rnl'):null, ly_banq:lyDay?fbv(lyDay,'banquet_other'):null,
+        ly_wine:lyDay?oodRev(lyDay,'Wine Shop'):null, ly_spa:lyDay?oodRev(lyDay,'Spa'):null,
         bud_total:budFromReport(day,'Total Hotel Revenue'), bud_room:budFromReport(day,'Room Revenue'),
-        bud_fb:budFromReport(day,'F&B Revenue'), bud_ood:budFromReport(day,'OOD Revenue')};});
+        bud_fb:budFromReport(day,'F&B Revenue'), bud_rnl:budFromReport(day,'Total RNL'),
+        bud_banq:budFromReport(day,'Banquet & Other Than F&B'),
+        bud_wine:budFromReport(day,'Wine Shop'), bud_spa:budFromReport(day,'Spa')};});
 }
 const CLR_LY='#4f9fd0',CLR_BUD='#c99a3f';
 function lineChart(series,m,color,selDay){
@@ -405,7 +416,7 @@ function drawChart(iso,series){
   const chart=lineChart(series,m,'var(--accent)',selDay);
   const btns=Object.keys(METRICS).map(k=>`<button class="cbtn${k===SELMETRIC?' on':''}" data-m="${k}">${METRICS[k].label}</button>`).join('');
   document.getElementById('revchart').innerHTML=`<div class="card">
-    <div class="chhead"><h3>${m.label} Revenue — ${mo} ${yr}</h3><div class="cbtns">${btns}</div></div>
+    <div class="chhead"><h3>${m.title} — ${mo} ${yr}</h3><div class="cbtns">${btns}</div></div>
     <div class="chartwrap" id="cw">${chart.svg}<div class="tt" id="tt"></div></div>
     <div class="chleg"><span style="color:var(--accent-soft)"><i></i>This Year</span><span style="color:${CLR_LY}"><i></i>Last Year</span><span style="color:${CLR_BUD}"><i class="dash"></i>Budget</span></div></div>`;
   document.querySelectorAll('#revchart .cbtn').forEach(b=>b.onclick=()=>{SELMETRIC=b.dataset.m;drawChart(iso,series);});
