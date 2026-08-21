@@ -138,6 +138,20 @@
   .pcard .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:8px}
   .pcard .v{font-size:26px;font-weight:700;letter-spacing:-.4px}
   .pcard .vs{font-size:12.5px;color:var(--faint);margin-top:6px}
+  .pk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px}
+  .pk-panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .pk-mhead{background:var(--head);text-align:center;font-weight:700;font-size:14px;padding:10px;border-bottom:1px solid var(--line)}
+  .pk-scroll{max-height:540px;overflow:auto}
+  table.pk{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.pk th,table.pk td{padding:7px 9px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line-soft)}
+  table.pk th:first-child,table.pk td:first-child{text-align:left}
+  table.pk thead th{position:sticky;top:0;background:var(--head);color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;z-index:1}
+  table.pk td.num{font-variant-numeric:tabular-nums}
+  table.pk td.up{color:var(--good)}table.pk td.down{color:var(--bad)}
+  table.pk td.occ{color:#08101a;font-weight:700;text-align:center}
+  table.pk tr:hover td{background:#182029}
+  table.pk tr.pk-tot td{background:var(--head);font-weight:700;border-top:1px solid var(--line);position:sticky;bottom:0}
+  table.pk tr.pk-tot td.occ{color:#08101a}
 </style>
 </head>
 <body data-palette="#b0143c">
@@ -503,33 +517,45 @@ function snapBase(snap,n){
   const iso=earlier[earlier.length-1];
   return {iso,exact:false,gap:Math.round((dObj(snap)-dObj(iso))/86400000)};
 }
+const PMETRICS={
+  rooms:{f:d=>d.r, fmt:v=>v==null?'—':num(v), label:'Rooms'},
+  rev:{f:d=>d.rev, fmt:v=>v==null?'—':rs(v), label:'Revenue'},
+  adr:{f:d=>d.adr, fmt:v=>v==null?'—':rs(v), label:'ADR'},
+};
+function occColor(o){if(o==null)return 'transparent';const t=Math.max(0,Math.min(1,(o-0.35)/0.65));const hue=Math.round(45+t*95);return `hsl(${hue},68%,55%)`;}
 function renderPickup(){
   const view=document.getElementById('view');
   if(!HF){return renderPickupActuals();}
-  const snap=PSNAP||HF.latest,n=PWIN;
-  const base=snapBase(snap,n);
-  if(!base){view.innerHTML=`<div class="err">No earlier snapshot to compare against ${labelDate(snap)}.</div>`;return;}
-  const C=HF.snaps[snap],B=HF.snaps[base.iso];
-  const stays=Object.keys(C).filter(iso=>iso>=snap&&B[iso]).sort();
-  let tRooms=0,tRev=0;
-  const rows=stays.map(iso=>{const c=C[iso],b=B[iso];const dR=(c.r||0)-(b.r||0),dV=(c.rev||0)-(b.rev||0);
-    tRooms+=dR;tRev+=dV;return {iso,dR,dV,cr:c.r,cv:c.rev};});
-  const blend=tRooms?tRev/tRooms:null;
-  const gapNote=base.exact?`${n}-night pick-up`:`vs nearest earlier snapshot (${base.gap} night${base.gap===1?'':'s'} back)`;
-  const card=(lbl,val,sub,delta)=>{const up=delta>=0,col=up?'var(--good)':'var(--bad)';
-    return `<div class="pcard"><div class="lbl">${lbl}</div><div class="v" style="color:${col}">${up?'▲':'▼'} ${val}</div><div class="vs">${sub}</div></div>`;};
-  const vc=(v,f)=>`<td class="num var ${v>0?'up':(v<0?'down':'')}">${v===0?'—':(v>0?'+':'−')+f(Math.abs(v))}</td>`;
-  const trows=rows.map(r=>`<tr><td>${labelDate(r.iso)}</td><td class="num">${num(r.cr)}</td>${vc(r.dR,num)}<td class="num">${rs(r.cv)}</td>${vc(r.dV,x=>'₹'+INR.format(Math.round(x)))}</tr>`).join('');
+  const A=HF.snaps[PFROM],B=HF.snaps[PTO];
+  if(!A||!B){view.innerHTML='<div class="err">Choose two snapshots to compare.</div>';return;}
+  const M=PMETRICS[PMETRIC]||PMETRICS.rooms;
+  const fromL=labelDate(PFROM).replace(/^\w+, /,''),toL=labelDate(PTO).replace(/^\w+, /,'');
+  const stays=Object.keys(B).filter(k=>A[k]).sort();
+  const byMonth={};stays.forEach(k=>{(byMonth[k.slice(0,7)]=byMonth[k.slice(0,7)]||[]).push(k);});
+  const pkTxt=v=>v==null?'—':(PMETRIC==='rooms'?sgnN(v):sgnR(v));
+  const pkCls=v=>v==null?'':(v>0?'up':(v<0?'down':''));
+  const panels=Object.keys(byMonth).sort().map(ym=>{
+    const dates=byMonth[ym];let sRoomsF=0,sRoomsT=0,sRevF=0,sRevT=0,occSum=0,occN=0;
+    const rows=dates.map(k=>{const a=A[k],b=B[k],d=dObj(k);
+      const vf=M.f(a),vt=M.f(b),pk=(vt!=null&&vf!=null)?vt-vf:null;
+      sRoomsF+=a.r||0;sRoomsT+=b.r||0;sRevF+=a.rev||0;sRevT+=b.rev||0;
+      if(b.occ!=null){occSum+=b.occ;occN++;}
+      return `<tr><td>${String(d.getDate()).padStart(2,'0')}/${ym.slice(5)} <span style="color:var(--faint)">${WD[d.getDay()]}</span></td>
+        <td class="num">${M.fmt(vf)}</td><td class="num">${M.fmt(vt)}</td>
+        <td class="num ${pkCls(pk)}">${pkTxt(pk)}</td>
+        <td class="occ" style="background:${occColor(b.occ)}">${b.occ!=null?(b.occ*100).toFixed(2)+'%':'—'}</td></tr>`;}).join('');
+    let tF,tT,tPk;
+    if(PMETRIC==='adr'){tF=sRoomsF?sRevF/sRoomsF:null;tT=sRoomsT?sRevT/sRoomsT:null;tPk=(tF!=null&&tT!=null)?tT-tF:null;}
+    else if(PMETRIC==='rev'){tF=sRevF;tT=sRevT;tPk=tT-tF;}
+    else{tF=sRoomsF;tT=sRoomsT;tPk=tT-tF;}
+    const avgOcc=occN?occSum/occN:null;
+    const totRow=`<tr class="pk-tot"><td>Total</td><td class="num">${M.fmt(tF)}</td><td class="num">${M.fmt(tT)}</td><td class="num ${pkCls(tPk)}">${pkTxt(tPk)}</td><td class="occ" style="background:${occColor(avgOcc)}">${avgOcc!=null?(avgOcc*100).toFixed(2)+'%':'—'}</td></tr>`;
+    return `<div class="pk-panel"><div class="pk-mhead">${MONTHS[+ym.slice(5)]} ${ym.slice(0,4)}</div>
+      <div class="pk-scroll"><table class="pk"><thead><tr><th>Date</th><th>${fromL}</th><th>${toL}</th><th>Pickup</th><th>Occ%</th></tr></thead>
+      <tbody>${rows}${totRow}</tbody></table></div></div>`;}).join('');
   view.innerHTML=`
-    <div class="summary"><div class="ic">✦</div><div class="tx">Pick-up as of <b>${labelDate(snap)}</b> vs <b>${labelDate(base.iso)}</b> — ${gapNote}. Summed across every on-the-books date from ${labelDate(snap).replace(/^\w+, /,'')} onward. Positive = booked since the earlier snapshot.</div></div>
-    <div class="pgrid">
-      ${card('Pick-up · Rooms',(tRooms>=0?'+':'−')+num(Math.abs(tRooms)),'room-nights gained across the horizon',tRooms)}
-      ${card('Pick-up · Room Revenue',(tRev>=0?'+':'−')+'₹'+INR.format(Math.round(Math.abs(tRev))),'revenue on the books gained',tRev)}
-      ${card('Pick-up · ADR (blended)',blend==null?'—':rs(blend),'avg rate of the picked-up rooms',blend||0)}
-    </div>
-    <div class="dcard" style="margin-top:16px"><div class="dh">Pick-up by stay date · ${n}-night window · snapshot ${labelDate(snap)}</div>
-      <table class="dt"><thead><tr><th>Stay Date</th><th>Rooms OTB</th><th>Rooms Δ</th><th>Room Rev OTB</th><th>Room Rev Δ</th></tr></thead><tbody>${trows||'<tr><td colspan="5">No comparable dates.</td></tr>'}</tbody></table></div>
-    <div class="hint">OTB = on the books as of ${labelDate(snap)}. Δ = change since the ${labelDate(base.iso)} snapshot. Horizon = every stay date from the snapshot date forward (Aug–Oct).</div>`;
+    <div class="summary"><div class="ic">✦</div><div class="tx"><b>${M.label}</b> pick-up — on the books at <b>${labelDate(PTO)}</b> vs <b>${labelDate(PFROM)}</b>, by stay date. Pickup = To − From; Occ% shaded by level.</div></div>
+    <div class="pk-grid">${panels||'<div class="err">No overlapping stay dates between the two snapshots.</div>'}</div>`;
 }
 function renderPickupActuals(){
   const iso=PDATE,n=PWIN,view=document.getElementById('view');
@@ -565,7 +591,7 @@ function renderPickupActuals(){
     <div class="hint">* comparison fell back to the nearest earlier available date (a gap in the data). Rooms Δ = rooms sold change; ADR Δ = rate change; Room Rev Δ = room-revenue change.</div>`;
 }
 
-let PDATE=null,PWIN=1,TAB='dbr',HF=null,HFSNAP=null,PSNAP=null;
+let PDATE=null,PWIN=1,TAB='dbr',HF=null,HFSNAP=null,PSNAP=null,PFROM=null,PTO=null,PMETRIC='rooms';
 const winSelHTML=`<select id="pwin"><option value="1">1 night</option><option value="2">2 nights</option><option value="3">3 nights</option><option value="7">7 nights</option></select>`;
 const snapOptsHTML=()=>HF.dates.slice().reverse().map(d=>`<option value="${d}">${labelDate(d)}</option>`).join('');
 function setControls(){
@@ -578,10 +604,12 @@ function setControls(){
       const s=document.getElementById('hsel');s.value=HFSNAP;s.onchange=()=>{HFSNAP=s.value;renderHF();};}
     else c.innerHTML='';
   }else if(TAB==='pickup'){
-    if(HF){c.innerHTML=`<div class="picker"><label>As of (snapshot)</label><select id="psnap">${snapOptsHTML()}</select></div>`+
-        `<div class="picker"><label>Pick-up window</label>${winSelHTML}</div>`;
-      const s=document.getElementById('psnap');s.value=PSNAP;const w=document.getElementById('pwin');w.value=PWIN;
-      s.onchange=()=>{PSNAP=s.value;renderPickup();};w.onchange=()=>{PWIN=+w.value;renderPickup();};}
+    if(HF){c.innerHTML=`<div class="picker"><label>From</label><select id="pfrom">${snapOptsHTML()}</select></div>`+
+        `<div class="picker"><label>To</label><select id="pto">${snapOptsHTML()}</select></div>`+
+        `<div class="picker"><label>Metric</label><select id="pmet"><option value="rooms">Rooms</option><option value="rev">Revenue</option><option value="adr">ADR</option></select></div>`;
+      const f=document.getElementById('pfrom'),t=document.getElementById('pto'),mt=document.getElementById('pmet');
+      f.value=PFROM;t.value=PTO;mt.value=PMETRIC;
+      f.onchange=()=>{PFROM=f.value;renderPickup();};t.onchange=()=>{PTO=t.value;renderPickup();};mt.onchange=()=>{PMETRIC=mt.value;renderPickup();};}
     else{c.innerHTML=`<div class="picker"><label>Date</label><select id="psel">${dateOptionsHTML()}</select></div>`+
         `<div class="picker"><label>Pick-up window</label>${winSelHTML}</div>`;
       const s=document.getElementById('psel');s.value=PDATE;const w=document.getElementById('pwin');w.value=PWIN;
@@ -619,7 +647,7 @@ function render(d){
 fetch('./data.json?ts='+Date.now()).then(r=>{if(!r.ok)throw 0;return r.json()}).then(d=>{
   render(d);
   fetch('./hf.json?ts='+Date.now()).then(r=>r.ok?r.json():null).then(h=>{
-    if(h&&h.snaps&&h.dates&&h.dates.length){HF=h;HFSNAP=h.latest;PSNAP=h.latest;if(TAB!=='dbr'){setControls();selectTab(TAB);}}
+    if(h&&h.snaps&&h.dates&&h.dates.length){HF=h;HFSNAP=h.latest;PSNAP=h.latest;PTO=h.latest;PFROM=h.dates[h.dates.length-2]||h.latest;if(TAB!=='dbr'){setControls();selectTab(TAB);}}
   }).catch(()=>{});
 }).catch(()=>{document.getElementById('app').innerHTML='<div class="err">No report data yet.</div>';});
 </script>
