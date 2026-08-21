@@ -75,6 +75,10 @@
   .mixleg .amt{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--muted)}
   .spark .big{font-size:22px;font-weight:700;letter-spacing:-.3px}
   .spark .cap{font-size:12px;color:var(--faint);margin-top:2px}
+  .chleg{display:flex;gap:18px;margin-top:12px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+  .chleg span{display:inline-flex;align-items:center;gap:7px}
+  .chleg i{width:16px;height:0;border-top:3px solid currentColor;display:inline-block;border-radius:2px}
+  .chleg i.dash{border-top-style:dashed}
 
   .mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:18px}
   .mgrid>div{background:var(--panel);padding:13px 16px}
@@ -196,23 +200,35 @@ function dayInsights(iso){
 }
 
 /* ---------- charts ---------- */
+function totRevBudget(day){const r=day.report;if(!r)return null;for(const s of r)for(const row of s.rows)if(/Total Hotel Revenue/.test(row.label))return row.today_bud;return null;}
 function monthSeries(iso){
   const pre=iso.slice(0,7);
   return Object.keys(DATA.days).filter(k=>k.slice(0,7)===pre).sort()
-    .map(k=>({iso:k,day:dObj(k).getDate(),...DATA.days[k].operating_income}));
+    .map(k=>{const day=DATA.days[k],lyk=lyIso(k);
+      return {iso:k,day:dObj(k).getDate(),...day.operating_income,
+        ly:DATA.days[lyk]?DATA.days[lyk].operating_income.total_hotel_revenue:null,
+        bud:totRevBudget(day)};});
 }
+const CLR_LY='#4f9fd0',CLR_BUD='#c99a3f';
 function lineChart(series,valkey,color,selDay){
   const W=640,H=200,pl=48,pr=12,pt=14,pb=24;
-  const ys=series.map(d=>d[valkey]),ymax=Math.max(...ys)*1.08||1;
+  const allv=[];series.forEach(d=>{if(d[valkey]!=null)allv.push(d[valkey]);if(d.ly!=null)allv.push(d.ly);if(d.bud!=null)allv.push(d.bud);});
+  const ymax=Math.max(...allv)*1.08||1;
   const x=i=>pl+(series.length<2?0:i/(series.length-1)*(W-pl-pr));
   const y=v=>pt+(1-v/ymax)*(H-pt-pb);
-  const line=series.map((d,i)=>`${i?'L':'M'}${x(i).toFixed(1)},${y(d[valkey]).toFixed(1)}`).join(' ');
+  const pathFor=key=>{let d='',pen=false;series.forEach((s,i)=>{const v=s[key];if(v==null){pen=false;return;}d+=`${pen?'L':'M'}${x(i).toFixed(1)},${y(v).toFixed(1)} `;pen=true;});return d.trim();};
+  const line=pathFor(valkey);
   const area=`${line} L${x(series.length-1).toFixed(1)},${H-pb} L${x(0).toFixed(1)},${H-pb} Z`;
+  const budPath=pathFor('bud'),lyPath=pathFor('ly');
   let grid='';for(let g=0;g<=3;g++){const gv=ymax*g/3,gy=y(gv);grid+=`<line x1="${pl}" y1="${gy}" x2="${W-pr}" y2="${gy}" stroke="#20293466"/><text x="${pl-7}" y="${gy+4}" text-anchor="end" fill="var(--faint)" font-size="10">${(gv/1e5).toFixed(1)}L</text>`;}
   let xl='';series.forEach((d,i)=>{if(series.length<=16||i%2===0)xl+=`<text x="${x(i)}" y="${H-7}" text-anchor="middle" fill="${d.day===selDay?'var(--accent-soft)':'var(--faint)'}" font-size="10" font-weight="${d.day===selDay?'700':'400'}">${d.day}</text>`;});
   const dots=series.map((d,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(d[valkey]).toFixed(1)}" r="${d.day===selDay?4.5:2.6}" fill="${d.day===selDay?'var(--accent-soft)':'#0f1419'}" stroke="${color}" stroke-width="2"/>`).join('');
   const hit=series.map((d,i)=>`<rect x="${(x(i)-(W-pl-pr)/series.length/2).toFixed(1)}" y="${pt}" width="${((W-pl-pr)/series.length).toFixed(1)}" height="${H-pt-pb}" fill="transparent" data-i="${i}" class="hit"/>`).join('');
-  return {svg:`<svg viewBox="0 0 ${W} ${H}"><defs><linearGradient id="g1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity="0.26"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>${grid}<path d="${area}" fill="url(#g1)"/><path d="${line}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/><line id="cr" x1="0" y1="${pt}" x2="0" y2="${H-pb}" stroke="${color}" stroke-dasharray="3 3" opacity="0"/>${dots}${xl}${hit}</svg>`,x,y,W,H,series};
+  const svg=`<svg viewBox="0 0 ${W} ${H}"><defs><linearGradient id="g1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity="0.26"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>${grid}<path d="${area}" fill="url(#g1)"/>`
+    +(budPath?`<path d="${budPath}" fill="none" stroke="${CLR_BUD}" stroke-width="1.7" stroke-dasharray="5 4" opacity="0.95"/>`:'')
+    +(lyPath?`<path d="${lyPath}" fill="none" stroke="${CLR_LY}" stroke-width="1.9" opacity="0.92"/>`:'')
+    +`<path d="${line}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linejoin="round"/><line id="cr" x1="0" y1="${pt}" x2="0" y2="${H-pb}" stroke="${color}" stroke-dasharray="3 3" opacity="0"/>${dots}${xl}${hit}</svg>`;
+  return {svg,x,y,W,H,series};
 }
 function sparkline(series,valkey,color){
   const W=260,H=54,pt=6,pb=6;const ys=series.map(d=>d[valkey]),mn=Math.min(...ys),mx=Math.max(...ys),rng=(mx-mn)||1;
@@ -356,7 +372,8 @@ function renderView(iso){
     ${heroBlock(iso)}
     ${insightsBlock(ins)}
     <div class="sechead"><h2>Charts</h2><span class="note">${MONTHS[dObj(iso).getMonth()+1]} ${dObj(iso).getFullYear()}</span></div>
-    <div class="card"><h3>Total Revenue — ${MONTHS[dObj(iso).getMonth()+1]} ${dObj(iso).getFullYear()}</h3><div class="chartwrap" id="cw">${chart.svg}<div class="tt" id="tt"></div></div></div>
+    <div class="card"><h3>Total Revenue — ${MONTHS[dObj(iso).getMonth()+1]} ${dObj(iso).getFullYear()}</h3><div class="chartwrap" id="cw">${chart.svg}<div class="tt" id="tt"></div></div>
+      <div class="chleg"><span style="color:var(--accent-soft)"><i></i>This Year</span><span style="color:${CLR_LY}"><i></i>Last Year</span><span style="color:${CLR_BUD}"><i class="dash"></i>Budget</span></div></div>
     <div class="crow">
       <div class="card"><h3>Revenue Mix — Selected Day</h3>${mixBar(day.operating_income)}</div>
       <div class="card spark"><h3>Occupancy — Month</h3><div class="big">${occNow}%</div><div class="cap">selected day</div>${sparkline(series,'occupancy','var(--good)')}</div>
@@ -373,7 +390,10 @@ function renderView(iso){
     const i=+h.dataset.i,dd=series[i],px=chart.x(i),py=chart.y(dd.total_hotel_revenue),rect=cw.getBoundingClientRect();
     cr.setAttribute('x1',px);cr.setAttribute('x2',px);cr.setAttribute('opacity','1');
     tt.style.left=(px/vb.width*rect.width)+'px';tt.style.top=(py/vb.height*rect.height)+'px';tt.style.opacity='1';
-    tt.innerHTML=`${MONTHS[dObj(dd.iso).getMonth()+1]} ${dd.day} · <b>${rs(dd.total_hotel_revenue)}</b><br>Occ ${(dd.occupancy*100).toFixed(0)}% · ADR ${rs(dd.adr)}`;
+    tt.innerHTML=`${MONTHS[dObj(dd.iso).getMonth()+1]} ${dd.day} · <b>${rs(dd.total_hotel_revenue)}</b>`
+      +(dd.ly!=null?`<br><span style="color:${CLR_LY}">LY ${rs(dd.ly)}</span>`:'')
+      +(dd.bud!=null?`<br><span style="color:${CLR_BUD}">Budget ${rs(dd.bud)}</span>`:'')
+      +`<br>Occ ${(dd.occupancy*100).toFixed(0)}% · ADR ${rs(dd.adr)}`;
   }));
   cw.addEventListener('mouseleave',()=>{tt.style.opacity='0';cr.setAttribute('opacity','0');});
 }
@@ -541,6 +561,7 @@ function selectTab(t){
   if(t==='dbr')renderView(PDATE);
   else if(t==='hf')renderHF();
   else renderPickup();
+  try{if(location.hash!=='#'+t)history.replaceState(null,'','#'+t);}catch(e){}
 }
 function render(d){
   DATA=d;
@@ -550,14 +571,16 @@ function render(d){
     <div class="titlerow"><h1>Daily Business Report</h1><div id="controls" style="display:flex;gap:10px;flex-wrap:wrap"></div></div>
     <div class="sub"><span class="badge ok"><span class="dot"></span>Reconciled</span><span>${d.property}</span><span>·</span><span>${dates.length} days available</span></div>
     <div class="tabnav"><div class="tabbar">
-      <button class="tab active" data-tab="dbr">Owner DBR</button>
+      <button class="tab active" data-tab="dbr">DBR</button>
       <button class="tab" data-tab="hf">H&amp;F</button>
       <button class="tab" data-tab="pickup">Pick-up</button>
     </div></div>
     <div id="view"></div>`;
   document.getElementById('stamp').textContent='Updated '+new Date(d.generated_at).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
   document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>selectTab(b.dataset.tab));
-  selectTab('dbr');
+  const h=(location.hash||'').replace('#','');
+  selectTab(['dbr','hf','pickup'].includes(h)?h:'dbr');
+  window.addEventListener('hashchange',()=>{const x=(location.hash||'').replace('#','');if(['dbr','hf','pickup'].includes(x)&&x!==TAB)selectTab(x);});
 }
 fetch('./data.json?ts='+Date.now()).then(r=>{if(!r.ok)throw 0;return r.json()}).then(d=>{
   render(d);
