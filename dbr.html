@@ -145,7 +145,11 @@
   .pk-mhead{background:var(--head);text-align:center;font-weight:700;font-size:14px;padding:10px;border-bottom:1px solid var(--line)}
   .pk-ai{display:flex;gap:9px;align-items:flex-start;padding:11px 16px;border-bottom:1px solid var(--line);background:linear-gradient(135deg,#1d1420,#1a222c);font-size:12.5px;color:var(--text);line-height:1.5}
   .pk-ai .ic{color:var(--accent-soft);font-size:14px;flex:0 0 auto}
-  .pk-scroll{max-height:560px;overflow:auto}
+  .pk-scroll{overflow-x:auto}
+  td.occ{padding:5px 8px;min-width:96px}
+  .occbar{position:relative;height:19px;border-radius:5px;background:#0e141b;border:1px solid var(--line-soft);overflow:hidden}
+  .occfill{position:absolute;left:0;top:0;bottom:0;border-radius:5px 0 0 5px}
+  .occbar span{position:relative;z-index:1;display:block;text-align:center;line-height:19px;font-size:11px;font-weight:600;color:var(--text)}
   table.pk{width:100%;border-collapse:collapse;font-size:12px}
   table.pk th.grp{text-align:center;color:var(--accent-soft);font-size:10px;border-bottom:1px solid var(--line)}
   table.pk tr.subh th{font-size:9.5px;color:var(--faint);font-weight:600;top:23px}
@@ -543,7 +547,8 @@ const PMETRICS={
   rev:{f:d=>d.rev, fmt:v=>v==null?'—':rs(v), label:'Revenue'},
   adr:{f:d=>d.adr, fmt:v=>v==null?'—':rs(v), label:'ADR'},
 };
-function occColor(o){if(o==null)return 'transparent';const t=Math.max(0,Math.min(1,(o-0.35)/0.65));const hue=Math.round(45+t*95);return `hsla(${hue},42%,45%,0.55)`;}
+function occColor(o){if(o==null)return 'transparent';const t=Math.max(0,Math.min(1,(o-0.35)/0.65));const hue=Math.round(45+t*95);return `hsl(${hue},48%,42%)`;}
+function occCell(o){if(o==null)return '<td class="occ">—</td>';const p=o*100;return `<td class="occ"><div class="occbar"><div class="occfill" style="width:${Math.min(100,Math.max(0,p)).toFixed(0)}%;background:${occColor(o)}"></div><span>${p.toFixed(0)}%</span></div></td>`;}
 function snapFrom(toIso,n){
   if(!HF)return toIso;
   const target=isoMinus(toIso,n);
@@ -573,7 +578,7 @@ function renderPickup(){
       rF+=a.r||0;rT+=b.r||0;vF+=a.rev||0;vT+=b.rev||0;if(b.occ!=null){occSum+=b.occ;occN++;}
       if(dR!=null&&(bestR==null||dR>bestR.dR))bestR={iso:k,dR,dV};
       return `<tr><td>${String(d.getDate()).padStart(2,'0')}/${ym.slice(5)} <span style="color:var(--faint)">${WD[d.getDay()]}</span></td>
-        <td class="occ" style="background:${occColor(b.occ)}">${b.occ!=null?(b.occ*100).toFixed(2)+'%':'—'}</td>
+        ${occCell(b.occ)}
         <td class="num">${num(b.r)}</td><td class="num">${rs(b.adr)}</td><td class="num">${rs(b.rev)}</td>
         ${dcell(dR,sgnN)}${dcell(dV,sgnR)}<td class="num">${adrPk==null?'—':rs(adrPk)}</td>${dcell(adrChg,sgnR)}</tr>`;}).join('');
     const dRt=rT-rF,dVt=vT-vF,bF=rF?vF/rF:null,bT=rT?vT/rT:null,adrPkt=dRt?dVt/dRt:null,adrChgt=(bF!=null&&bT!=null)?bT-bF:null;
@@ -591,7 +596,7 @@ function renderPickup(){
       ai=`<b>${mName}</b> ${rphrase} and ${vphrase} in revenue since ${fromShort}${(adrPkt!=null&&dRt>0)?` at a <b>${rs(adrPkt)}</b> pick-up ADR`:''}.${best} On the books at <b>${occTxt}</b> occupancy.`;
     }
     const totRow=`<tr class="pk-tot"><td>Total</td>
-      <td class="occ" style="background:${occColor(avgOcc)}">${avgOcc!=null?(avgOcc*100).toFixed(2)+'%':'—'}</td>
+      ${occCell(avgOcc)}
       <td class="num">${num(rT)}</td><td class="num">${rs(bT)}</td><td class="num">${rs(vT)}</td>
       ${dcell(dRt,sgnN)}${dcell(dVt,sgnR)}<td class="num">${adrPkt==null?'—':rs(adrPkt)}</td>${dcell(adrChgt,sgnR)}</tr>`;
     return `<div class="pk-panel"><div class="pk-mhead">${mName}</div>
