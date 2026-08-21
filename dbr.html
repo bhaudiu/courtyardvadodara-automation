@@ -27,6 +27,8 @@
   .picker label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
   .picker select{background:#0e141b;color:var(--text);border:1px solid var(--line);border-radius:7px;padding:7px 10px;font-size:14px;font-weight:600;cursor:pointer;min-width:210px}
   .picker select:focus{outline:2px solid var(--ring);border-color:var(--accent)}
+  .picker input[type=number]{background:#0e141b;color:var(--text);border:1px solid var(--line);border-radius:7px;padding:7px 10px;font-size:14px;font-weight:600;width:76px}
+  .picker input[type=number]:focus{outline:2px solid var(--ring);border-color:var(--accent)}
   .sub{color:var(--muted);font-size:13.5px;margin:2px 0 18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   .badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--line)}
   .badge.ok{color:var(--good);border-color:#2c6b55}
@@ -616,12 +618,13 @@ function setControls(){
   }else if(TAB==='pickup'){
     if(HF){c.innerHTML=`<div class="picker"><label>From</label><select id="pfrom">${snapOptsHTML()}</select></div>`+
         `<div class="picker"><label>To</label><select id="pto">${snapOptsHTML()}</select></div>`+
-        `<div class="picker"><label>Pickup days</label><select id="pdays"><option>1</option><option>2</option><option>3</option><option>7</option><option>14</option></select></div>`;
+        `<div class="picker"><label>Pickup days</label><input id="pdays" type="number" min="1" step="1" value="${PDAYS}"></div>`;
       const f=document.getElementById('pfrom'),t=document.getElementById('pto'),dd=document.getElementById('pdays');
       f.value=PFROM;t.value=PTO;dd.value=String(PDAYS);
+      const applyDays=()=>{PDAYS=Math.max(1,Math.round(+dd.value||1));dd.value=String(PDAYS);PFROM=snapFrom(PTO,PDAYS);f.value=PFROM;renderPickup();};
       t.onchange=()=>{PTO=t.value;PFROM=snapFrom(PTO,PDAYS);f.value=PFROM;renderPickup();};
-      dd.onchange=()=>{PDAYS=+dd.value;PFROM=snapFrom(PTO,PDAYS);f.value=PFROM;renderPickup();};
-      f.onchange=()=>{PFROM=f.value;PDAYS=Math.max(1,Math.round((dObj(PTO)-dObj(PFROM))/86400000));const o=dd.querySelector(`option[value="${PDAYS}"]`)||[...dd.options].find(x=>x.value==PDAYS);if(o)dd.value=String(PDAYS);renderPickup();};}
+      dd.onchange=applyDays;dd.onkeydown=e=>{if(e.key==='Enter')applyDays();};
+      f.onchange=()=>{PFROM=f.value;PDAYS=Math.max(1,Math.round((dObj(PTO)-dObj(PFROM))/86400000));dd.value=String(PDAYS);renderPickup();};}
     else{c.innerHTML=`<div class="picker"><label>Date</label><select id="psel">${dateOptionsHTML()}</select></div>`+
         `<div class="picker"><label>Pick-up window</label>${winSelHTML}</div>`;
       const s=document.getElementById('psel');s.value=PDATE;const w=document.getElementById('pwin');w.value=PWIN;
