@@ -140,7 +140,7 @@
   .pcard .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:8px}
   .pcard .v{font-size:26px;font-weight:700;letter-spacing:-.4px}
   .pcard .vs{font-size:12.5px;color:var(--faint);margin-top:6px}
-  .pk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(540px,1fr));gap:16px}
+  .pk-grid{display:grid;grid-template-columns:1fr;gap:16px}
   .pk-panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
   .pk-mhead{background:var(--head);text-align:center;font-weight:700;font-size:14px;padding:10px;border-bottom:1px solid var(--line)}
   .pk-scroll{max-height:560px;overflow:auto}
@@ -152,10 +152,10 @@
   table.pk thead th{position:sticky;top:0;background:var(--head);color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;z-index:1}
   table.pk td.num{font-variant-numeric:tabular-nums}
   table.pk td.up{color:var(--good)}table.pk td.down{color:var(--bad)}
-  table.pk td.occ{color:#08101a;font-weight:700;text-align:center}
+  table.pk td.occ{color:var(--text);font-weight:600;text-align:center}
   table.pk tr:hover td{background:#182029}
   table.pk tr.pk-tot td{background:var(--head);font-weight:700;border-top:1px solid var(--line);position:sticky;bottom:0}
-  table.pk tr.pk-tot td.occ{color:#08101a}
+  table.pk tr.pk-tot td.occ{color:var(--text)}
   .str-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:18px}
   .str-cap{background:var(--head);text-align:center;font-weight:700;font-size:13.5px;padding:10px;border-bottom:1px solid var(--line)}
   table.str{width:100%;border-collapse:collapse;font-size:12.5px;min-width:760px}
@@ -541,7 +541,7 @@ const PMETRICS={
   rev:{f:d=>d.rev, fmt:v=>v==null?'—':rs(v), label:'Revenue'},
   adr:{f:d=>d.adr, fmt:v=>v==null?'—':rs(v), label:'ADR'},
 };
-function occColor(o){if(o==null)return 'transparent';const t=Math.max(0,Math.min(1,(o-0.35)/0.65));const hue=Math.round(45+t*95);return `hsl(${hue},68%,55%)`;}
+function occColor(o){if(o==null)return 'transparent';const t=Math.max(0,Math.min(1,(o-0.35)/0.65));const hue=Math.round(45+t*95);return `hsla(${hue},42%,45%,0.55)`;}
 function snapFrom(toIso,n){
   if(!HF)return toIso;
   const target=isoMinus(toIso,n);
