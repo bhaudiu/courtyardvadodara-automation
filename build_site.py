@@ -233,6 +233,18 @@ def main():
     anchor_iso = store["anchor_date"]
     anchor_sections = store["anchor_sections"]
 
+    # fold in last-year reference history (2024-2025 daily records from the monthly
+    # GRR files) so the LY line + year-over-year columns have data. Never overwrites
+    # this-year (2026) fetched days.
+    if os.path.exists("history.json"):
+        hist = json.load(open("history.json"))
+        n = 0
+        for k, v in hist.get("days", {}).items():
+            if k < "2026-01-01":
+                days[k] = v
+                n += 1
+        print(f"  merged {n} last-year history day(s) from history.json")
+
     # fold in EVERY complete report set that fetch_email.py downloaded (backfills many days)
     added = []
     inbox = "inbox"
@@ -288,7 +300,7 @@ def main():
         "sections": latest_report,
         "insights": build_insights(latest_report),
     }
-    json.dump(data, open(DATA, "w"), indent=1, default=str)
+    json.dump(data, open(DATA, "w"), separators=(",", ":"), default=str)
     print(f"Wrote {DATA}: {len(out_days)} days, latest {latest}")
 
 
