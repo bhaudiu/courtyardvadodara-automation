@@ -30,6 +30,12 @@
   .picker input[type=number]{background:#0e141b;color:var(--text);border:1px solid var(--line);border-radius:7px;padding:7px 10px;font-size:14px;font-weight:600;width:76px}
   .picker input[type=number]:focus{outline:2px solid var(--ring);border-color:var(--accent)}
   .sub{color:var(--muted);font-size:13.5px;margin:2px 0 18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .refbtn{margin-left:auto;background:var(--panel);border:1px solid var(--line);color:var(--muted);font-size:12.5px;font-weight:600;padding:6px 13px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+  .refbtn:hover{color:var(--text);border-color:var(--accent)}
+  .refbtn:disabled{opacity:.7;cursor:default}
+  .refbtn .ic{display:inline-block;font-size:14px}
+  .refbtn.spin .ic{animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
   .badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--line)}
   .badge.ok{color:var(--good);border-color:#2c6b55}
   .badge .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
@@ -760,13 +766,30 @@ function renderSTR(){
   view.innerHTML=subbar+body;
   document.querySelectorAll('#view .cbtn[data-str]').forEach(b=>b.onclick=()=>{STRSUB=b.dataset.str;renderSTR();});
 }
+function refreshData(){
+  const btn=document.getElementById('refreshBtn');
+  if(btn){btn.classList.add('spin');btn.disabled=true;}
+  const done=()=>{if(btn){btn.classList.remove('spin');btn.disabled=false;}};
+  Promise.all([
+    fetch('./data.json?ts='+Date.now()).then(r=>r.ok?r.json():null).catch(()=>null),
+    fetch('./hf.json?ts='+Date.now()).then(r=>r.ok?r.json():null).catch(()=>null),
+    fetch('./star.json?ts='+Date.now()).then(r=>r.ok?r.json():null).catch(()=>null)
+  ]).then(([d,h,s])=>{
+    if(d){DATA=d;const st=document.getElementById('stamp');if(st)st.textContent='Updated '+new Date(d.generated_at).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      const dc=document.getElementById('daycount');if(dc)dc.textContent=Object.keys(d.days).length+' days available';}
+    if(h&&h.snaps&&h.dates&&h.dates.length){HF=h;if(!HF.dates.includes(PTO)){HFSNAP=h.latest;PTO=h.latest;PDAYS=1;PFROM=snapFrom(PTO,PDAYS);}}
+    if(s){STAR=s;}
+    selectTab(TAB);
+    done();
+  }).catch(done);
+}
 function render(d){
   DATA=d;
   const dates=Object.keys(d.days).sort().reverse();
   PDATE=d.latest_date;PWIN=1;TAB='dbr';
   document.getElementById('app').innerHTML=`
     <div class="titlerow"><h1>Daily Business Report</h1><div id="controls" style="display:flex;gap:10px;flex-wrap:wrap"></div></div>
-    <div class="sub"><span class="badge ok"><span class="dot"></span>Reconciled</span><span>${d.property}</span><span>·</span><span>${dates.length} days available</span></div>
+    <div class="sub"><span class="badge ok"><span class="dot"></span>Reconciled</span><span>${d.property}</span><span>·</span><span id="daycount">${dates.length} days available</span><button id="refreshBtn" class="refbtn" title="Reload the latest data"><span class="ic">↻</span> Refresh</button></div>
     <div class="tabnav"><div class="tabbar">
       <button class="tab active" data-tab="dbr">DBR</button>
       <button class="tab" data-tab="hf">H&amp;F</button>
@@ -776,6 +799,7 @@ function render(d){
     <div id="view"></div>`;
   document.getElementById('stamp').textContent='Updated '+new Date(d.generated_at).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
   document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>selectTab(b.dataset.tab));
+  const rb=document.getElementById('refreshBtn');if(rb)rb.onclick=refreshData;
   const h=(location.hash||'').replace('#','');
   selectTab(['dbr','hf','pickup','str'].includes(h)?h:'dbr');
   window.addEventListener('hashchange',()=>{const x=(location.hash||'').replace('#','');if(['dbr','hf','pickup','str'].includes(x)&&x!==TAB)selectTab(x);});
