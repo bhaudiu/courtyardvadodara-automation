@@ -394,6 +394,14 @@ def main():
     except Exception as e:
         print(f"update_star failed: {e}")
 
+    # Generate the downloadable GRR owner-report workbook from the report we just
+    # built. Never let a failure here break the DBR data build.
+    try:
+        import build_grr_xlsx  # noqa
+        build_grr_xlsx.build(DATA, "grr.xlsx")
+    except Exception as e:
+        print(f"build_grr_xlsx failed: {e}")
+
 
 if __name__ == "__main__":
     main()

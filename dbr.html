@@ -188,6 +188,41 @@
   table.str td.idx.down{color:var(--bad)}
   table.str tbody tr:hover td{background:#182029}
   table.str tbody tr:hover td.str-per{background:#1b232d}
+  .dlbtn{margin-left:auto;background:linear-gradient(135deg,#1f7a44,#155e33);border:1px solid #2c6b55;color:#fff;font-size:12px;font-weight:600;padding:6px 13px;border-radius:8px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+  .dlbtn:hover{filter:brightness(1.1)}
+  .printonly{display:none}
+
+  @media print{
+    @page{size:A4 landscape;margin:9mm}
+    :root{--bg:#fff;--panel:#fff;--panel-2:#fff;--head:#eef1f4;--sec:#e7ebef;--text:#111;--muted:#333;--faint:#555;--line:#b7bfc8;--line-soft:#d7dde3;--accent:#8a0f30;--accent-soft:#8a0f30;--good:#127a45;--bad:#b3243f}
+    html,body{background:#fff!important;color:#111!important}
+    body{background-image:none!important}
+    header,footer,.tabnav,#controls,.picker,.refbtn,.dlbtn,.sub .badge,.chleg,.tt,.hint,.note{display:none!important}
+    .sub{display:none!important}
+    .page{padding:0!important}
+    .printonly{display:block!important}
+    #printhead{margin:0 0 12px;padding:0 0 10px;border-bottom:2px solid #8a0f30}
+    #printhead .ph-t{font-size:19px;font-weight:700;color:#111}
+    #printhead .ph-s{font-size:12px;color:#444;margin-top:3px}
+    .hcard,.card,.pcard,.icard,.dcard,.pk-panel,.str-card,.summary,.mgrid{break-inside:avoid;box-shadow:none!important;background:#fff!important;border:1px solid #b7bfc8!important}
+    .hero,.icards,.crow,.pgrid,.cols2{break-inside:avoid}
+    .reportwrap,.pk-scroll,.str-card>div,.dcard,.cols2{overflow:visible!important}
+    table.report{min-width:0!important;width:100%!important;font-size:8.4px!important;table-layout:fixed}
+    table.report th,table.report td{padding:3px 4px!important;white-space:normal!important}
+    table.pk{font-size:8.6px!important}
+    table.pk th,table.pk td{padding:3px 4px!important}
+    th.stick,td.stick,tr.sec td,tr.subh th,table.report thead th,table.pk thead th,table.pk tr.pk-tot td,td.str-per,th.str-per{position:static!important}
+    tbody td.stick,tbody tr:hover td.stick{background:#fff!important}
+    table.report thead th,.grp th,.subh th{background:#eef1f4!important}
+    tr.sec td{background:#e7ebef!important;color:#8a0f30!important}
+    tr.total td{background:#f2e6ea!important}
+    table.dt tr:hover td,table.report tbody tr:hover td,table.pk tr:hover td,table.str tbody tr:hover td{background:transparent!important}
+    .var.up,.idx.up,table.pk td.up{color:#127a45!important}
+    .var.down,.idx.down,table.pk td.down{color:#b3243f!important}
+    .occbar{border:1px solid #b7bfc8}
+    .aichip{background:#8a0f30!important}
+    a{color:#111!important;text-decoration:none}
+  }
 </style>
 </head>
 <body data-palette="#b0143c">
@@ -685,14 +720,26 @@ function setControls(){
       s.onchange=()=>{PDATE=s.value;renderPickup();};w.onchange=()=>{PWIN=+w.value;renderPickup();};}
   }else{c.innerHTML='';}
 }
+const TABNAME={dbr:'Daily Business Report (GRR)',hf:'History & Forecast',pickup:'Pick-up Report',str:'STR / Market Benchmark'};
+function updatePrintHead(){
+  const ph=document.getElementById('printhead');if(!ph)return;
+  let sub='';
+  if(TAB==='dbr'&&DATA)sub=`Reporting day: ${labelDate(PDATE)}`;
+  else if(TAB==='pickup'&&HF&&PFROM&&PTO)sub=`On the books at ${labelDate(PTO)} vs ${labelDate(PFROM)}`;
+  const gen=DATA?`Generated ${new Date(DATA.generated_at).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}`:'';
+  ph.innerHTML=`<div class="ph-t">Courtyard by Marriott Vadodara — ${TABNAME[TAB]||''}</div><div class="ph-s">${[sub,gen].filter(Boolean).join(' · ')} · Managed by NewcrestImage</div>`;
+}
 function selectTab(t){
   TAB=t;
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
+  const pb=document.getElementById('printBtn');if(pb)pb.style.display=(t==='dbr'||t==='pickup')?'':'none';
+  const gb=document.getElementById('grrBtn');if(gb)gb.style.display=(t==='dbr')?'':'none';
   setControls();
   if(t==='dbr')renderView(PDATE);
   else if(t==='hf')renderHF();
   else if(t==='str')renderSTR();
   else renderPickup();
+  updatePrintHead();
   try{if(location.hash!=='#'+t)history.replaceState(null,'','#'+t);}catch(e){}
 }
 
@@ -789,17 +836,19 @@ function render(d){
   PDATE=d.latest_date;PWIN=1;TAB='dbr';
   document.getElementById('app').innerHTML=`
     <div class="titlerow"><h1>Daily Business Report</h1><div id="controls" style="display:flex;gap:10px;flex-wrap:wrap"></div></div>
-    <div class="sub"><span class="badge ok"><span class="dot"></span>Reconciled</span><span>${d.property}</span><span>·</span><span id="daycount">${dates.length} days available</span><button id="refreshBtn" class="refbtn" title="Reload the latest data"><span class="ic">↻</span> Refresh</button></div>
+    <div class="sub"><span class="badge ok"><span class="dot"></span>Reconciled</span><span>${d.property}</span><span>·</span><span id="daycount">${dates.length} days available</span><button id="refreshBtn" class="refbtn" title="Reload the latest data"><span class="ic">↻</span> Refresh</button><button id="printBtn" class="refbtn" style="margin-left:8px" title="Print this tab (or save as PDF)"><span class="ic">⎙</span> Print</button><a id="grrBtn" class="refbtn" href="./grr.xlsx" download style="margin-left:8px;border-color:#2c6b55;color:#7fe0b0;text-decoration:none" title="Download the latest day's GRR owner report as Excel"><span class="ic">⬇</span> GRR (Excel)</a></div>
     <div class="tabnav"><div class="tabbar">
       <button class="tab active" data-tab="dbr">DBR</button>
       <button class="tab" data-tab="hf">H&amp;F</button>
       <button class="tab" data-tab="pickup">Pick-up</button>
       <button class="tab" data-tab="str">STR</button>
     </div></div>
+    <div id="printhead" class="printonly"></div>
     <div id="view"></div>`;
   document.getElementById('stamp').textContent='Updated '+new Date(d.generated_at).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
   document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>selectTab(b.dataset.tab));
   const rb=document.getElementById('refreshBtn');if(rb)rb.onclick=refreshData;
+  const pb=document.getElementById('printBtn');if(pb)pb.onclick=()=>{updatePrintHead();window.print();};
   const h=(location.hash||'').replace('#','');
   selectTab(['dbr','hf','pickup','str'].includes(h)?h:'dbr');
   window.addEventListener('hashchange',()=>{const x=(location.hash||'').replace('#','');if(['dbr','hf','pickup','str'].includes(x)&&x!==TAB)selectTab(x);});
