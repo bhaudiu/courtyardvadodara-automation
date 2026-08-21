@@ -771,22 +771,39 @@ function renderHF(){
   if(!HF){return renderHFActuals();}
   const snap=HFSNAP||HF.latest,S=HF.snaps[snap];
   const stays=Object.keys(S).sort();
-  const maxRev=Math.max(...stays.map(k=>S[k].rev||0),1);
   const sum=(f,sec)=>stays.filter(k=>!sec||S[k].sec===sec).reduce((a,k)=>a+(f(S[k])||0),0);
-  let body='',lastSec=null;
-  stays.forEach(iso=>{const m=S[iso];
-    if(m.sec!==lastSec){lastSec=m.sec;body+=`<tr class="sub"><td colspan="5" style="color:var(--accent-soft);text-transform:uppercase;letter-spacing:.6px;font-size:11px;font-weight:700;background:var(--sec)">${m.sec==='history'?'History (actualised)':'Forecast (on the books)'}</td></tr>`;}
-    body+=`<tr><td>${labelDate(iso)}</td><td class="num">${num(m.r)}</td><td class="num">${m.occ==null?'—':(m.occ*100).toFixed(0)+'%'}</td><td class="num">${rs(m.adr)}</td><td class="num rev">${rs(m.rev)}<span class="mb" style="width:${Math.max(3,(m.rev||0)/maxRev*60)}px"></span></td></tr>`;});
   const fRooms=sum(m=>m.r,'forecast'),fRev=sum(m=>m.rev,'forecast');
+  // group stay dates by month
+  const byMonth={};stays.forEach(k=>{(byMonth[k.slice(0,7)]=byMonth[k.slice(0,7)]||[]).push(k);});
+  const panels=Object.keys(byMonth).sort().map(ym=>{
+    const dates=byMonth[ym];let rSum=0,vSum=0,occSum=0,occN=0,hist=0,fc=0;
+    const rows=dates.map(k=>{const m=S[k],d=dObj(k);
+      rSum+=m.r||0;vSum+=m.rev||0;if(m.occ!=null){occSum+=m.occ;occN++;}
+      if(m.sec==='history')hist++;else fc++;
+      const tag=m.sec==='history'?'<span style="color:var(--good);font-weight:600">History</span>':'<span style="color:var(--blue);font-weight:600">Forecast</span>';
+      return `<tr><td>${String(d.getDate()).padStart(2,'0')}/${ym.slice(5)} <span style="color:var(--faint)">${WD[d.getDay()]}</span></td>
+        ${occCell(m.occ)}
+        <td class="num">${num(m.r)}</td><td class="num">${rs(m.adr)}</td><td class="num">${rs(m.rev)}</td><td>${tag}</td></tr>`;}).join('');
+    const avgOcc=occN?occSum/occN:null,bAdr=rSum?vSum/rSum:null;
+    const mName=MONTHS[+ym.slice(5)]+' '+ym.slice(0,4);
+    const occTxt=avgOcc!=null?(avgOcc*100).toFixed(1)+'%':'—';
+    const kind=fc&&!hist?'on the books':(hist&&!fc?'actualised':'on the books / actualised');
+    const ai=`<b>${mName}</b> — <b>${num(rSum)}</b> room-night${rSum===1?'':'s'} ${kind}, <b>${rs(vSum)}</b> room revenue at a <b>${rs(bAdr)}</b> blended ADR, avg occupancy <b>${occTxt}</b>. ${hist} history · ${fc} forecast day${fc===1?'':'s'}.`;
+    const totRow=`<tr class="pk-tot"><td>Total</td>${occCell(avgOcc)}<td class="num">${num(rSum)}</td><td class="num">${rs(bAdr)}</td><td class="num">${rs(vSum)}</td><td></td></tr>`;
+    return `<div class="pk-panel"><div class="pk-mhead">${mName}</div>
+      <div class="pk-ai"><span class="ic">✦</span><span>${ai}</span></div>
+      <div class="pk-scroll"><table class="pk"><thead>
+        <tr><th>Date</th><th>Occ%</th><th>Rooms</th><th>ADR</th><th>Room Revenue</th><th>Status</th></tr></thead>
+      <tbody>${rows}${totRow}</tbody></table></div></div>`;}).join('');
   view.innerHTML=`
-    <div class="summary"><div class="ic">✦</div><div class="tx">History &amp; Forecast — R106 snapshot taken <b>${labelDate(snap)}</b>. History = actualised days; Forecast = rooms &amp; revenue on the books as of that snapshot.</div></div>
+    <div class="summary"><div class="ic">✦</div><div class="tx">History &amp; Forecast — R106 snapshot taken <b>${labelDate(snap)}</b>, grouped by month. <b>History</b> = actualised days; <b>Forecast</b> = rooms &amp; revenue on the books as of that snapshot.</div></div>
     <div class="pgrid">
       <div class="pcard"><div class="lbl">On the Books · Rooms</div><div class="v">${num(fRooms)}</div><div class="vs">forecast room-nights</div></div>
       <div class="pcard"><div class="lbl">On the Books · Room Revenue</div><div class="v">${rs(fRev)}</div><div class="vs">forecast dates only</div></div>
       <div class="pcard"><div class="lbl">Forecast ADR</div><div class="v">${rs(fRooms?fRev/fRooms:null)}</div><div class="vs">blended, forecast dates</div></div>
     </div>
-    <div class="dcard" style="margin-top:16px"><div class="dh">R106 History &amp; Forecast — ${stays.length} stay dates · snapshot ${labelDate(snap)}</div>
-      <table class="dt"><thead><tr><th>Stay Date</th><th>Rooms</th><th>Occ %</th><th>ADR</th><th>Room Revenue</th></tr></thead><tbody>${body}</tbody></table></div>`;
+    <div class="pk-legend"><span class="lg-label">Occupancy</span>${OCCBANDS.map(x=>`<span class="lg-item"><i style="background:${x[1]}"></i>${x[2]}</span>`).join('')}</div>
+    <div class="pk-grid">${panels||'<div class="err">No stay dates in this snapshot.</div>'}</div>`;
 }
 
 function snapBase(snap,n){
