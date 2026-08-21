@@ -18,6 +18,8 @@ from parse_reports import build_grr_day  # noqa
 
 STORE = "store.json"
 DATA = "data.json"
+HF = "hf.json"
+STAR = "star.json"
 # filenames that fetch_email.py writes
 MF, TB, DO = "manager_flash.pdf", "trial_balance.pdf", "daily_operations.xlsx"
 
@@ -226,6 +228,83 @@ def build_insights(sections):
     return {"summary": summary, "highlights": hi[:4], "watch": watch, "action_items": acts}
 
 
+# ---------------- H&F (Pick-up) accumulation from inbox/hnf_* ----------------
+def update_hf():
+    """Merge every inbox/hnf_* snapshot email into the persistent hf.json.
+
+    hf.json accumulates across runs: each snapshot is keyed by the RUN date
+    printed on the R106 PDF, so re-fetching an old email is idempotent and a
+    new day simply adds a new snapshot. Never loses history already stored.
+    """
+    if os.path.exists(HF):
+        doc = json.load(open(HF))
+    else:
+        doc = {"latest": None, "dates": [], "snaps": {}}
+    snaps = doc.get("snaps", {})
+
+    inbox = "inbox"
+    added = []
+    if os.path.isdir(inbox):
+        try:
+            import parse_hnf  # noqa
+        except Exception as e:
+            print(f"  hf: parse_hnf unavailable ({e}); skipping H&F update")
+            return
+        for d in sorted(os.listdir(inbox)):
+            if not d.startswith("hnf_"):
+                continue
+            folder = os.path.join(inbox, d)
+            try:
+                run_date, data = parse_hnf.parse_hnf_folder(folder)
+            except Exception as e:
+                print(f"  hf parse error in {d}: {e}")
+                continue
+            if run_date and data:
+                snaps[run_date] = data            # newest wins for same run date
+                added.append(run_date)
+                print(f"  hf: snapshot {run_date} ({len(data)} stay rows) from {d}")
+
+    if not snaps:
+        return
+    dates = sorted(snaps.keys())
+    doc = {"latest": dates[-1], "dates": dates, "snaps": snaps}
+    json.dump(doc, open(HF, "w"), separators=(",", ":"))
+    print(f"Wrote {HF}: {len(snaps)} snapshots, latest {doc['latest']}"
+          + (f"; added {sorted(set(added))}" if added else "; no new snapshot"))
+
+
+# ---------------- STR / STAR from inbox/star_*.xlsx ----------------
+def update_star():
+    """Refresh star.json from any STAR workbook fetch_email.py saved.
+
+    Monthly and Weekly are updated independently; a missing file keeps whatever
+    was stored before (the newest STAR report each carries a full period view).
+    """
+    monthly_x = os.path.join("inbox", "star_monthly.xlsx")
+    weekly_x = os.path.join("inbox", "star_weekly.xlsx")
+    if not (os.path.exists(monthly_x) or os.path.exists(weekly_x)):
+        return
+    if os.path.exists(STAR):
+        doc = json.load(open(STAR))
+    else:
+        doc = {"monthly": None, "weekly": None}
+    try:
+        import parse_star  # noqa
+    except Exception as e:
+        print(f"  star: parse_star unavailable ({e}); skipping STAR update")
+        return
+    for key, path in (("monthly", monthly_x), ("weekly", weekly_x)):
+        if os.path.exists(path):
+            try:
+                doc[key] = parse_star.parse_glance(path)
+                print(f"  star: {key} -> {doc[key].get('period_label')} "
+                      f"(created {doc[key].get('created')})")
+            except Exception as e:
+                print(f"  star parse error ({key}): {e}")
+    json.dump(doc, open(STAR, "w"), separators=(",", ":"), default=str)
+    print(f"Wrote {STAR}")
+
+
 # ---------------- main ----------------
 def main():
     store = json.load(open(STORE))
@@ -302,6 +381,18 @@ def main():
     }
     json.dump(data, open(DATA, "w"), separators=(",", ":"), default=str)
     print(f"Wrote {DATA}: {len(out_days)} days, latest {latest}")
+
+    # H&F (Pick-up) and STR both live in their own persistent json files, fed
+    # from the same inbox/ that fetch_email.py filled. Errors here must never
+    # break the DBR build, which is already written above.
+    try:
+        update_hf()
+    except Exception as e:
+        print(f"update_hf failed: {e}")
+    try:
+        update_star()
+    except Exception as e:
+        print(f"update_star failed: {e}")
 
 
 if __name__ == "__main__":
