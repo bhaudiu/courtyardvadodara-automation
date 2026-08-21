@@ -140,7 +140,7 @@
   .pcard .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:8px}
   .pcard .v{font-size:26px;font-weight:700;letter-spacing:-.4px}
   .pcard .vs{font-size:12.5px;color:var(--faint);margin-top:6px}
-  .pk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:16px}
+  .pk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(540px,1fr));gap:16px}
   .pk-panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
   .pk-mhead{background:var(--head);text-align:center;font-weight:700;font-size:14px;padding:10px;border-bottom:1px solid var(--line)}
   .pk-scroll{max-height:560px;overflow:auto}
@@ -542,7 +542,6 @@ function renderPickup(){
   if(!HF){return renderPickupActuals();}
   const A=HF.snaps[PFROM],B=HF.snaps[PTO];
   if(!A||!B){view.innerHTML='<div class="err">Choose two snapshots to compare.</div>';return;}
-  const fromL=labelDate(PFROM).replace(/^\w+, /,''),toL=labelDate(PTO).replace(/^\w+, /,'');
   const stays=Object.keys(B).filter(k=>A[k]).sort();
   const byMonth={};stays.forEach(k=>{(byMonth[k.slice(0,7)]=byMonth[k.slice(0,7)]||[]).push(k);});
   const dcell=(v,f)=>`<td class="num ${v==null?'':(v>0?'up':(v<0?'down':''))}">${v==null?'—':f(v)}</td>`;
@@ -551,22 +550,26 @@ function renderPickup(){
     const rows=dates.map(k=>{const a=A[k],b=B[k],d=dObj(k);
       const dR=(b.r!=null&&a.r!=null)?b.r-a.r:null;
       const dV=(b.rev!=null&&a.rev!=null)?b.rev-a.rev:null;
-      const dA=(b.adr!=null&&a.adr!=null)?b.adr-a.adr:null;
+      const adrPk=(dR&&dV!=null)?dV/dR:null;                       // rate the picked-up rooms came in at
+      const adrChg=(b.adr!=null&&a.adr!=null)?b.adr-a.adr:null;    // ADR change vs prior snapshot
       rF+=a.r||0;rT+=b.r||0;vF+=a.rev||0;vT+=b.rev||0;if(b.occ!=null){occSum+=b.occ;occN++;}
       return `<tr><td>${String(d.getDate()).padStart(2,'0')}/${ym.slice(5)} <span style="color:var(--faint)">${WD[d.getDay()]}</span></td>
-        <td class="num">${num(a.r)}</td><td class="num">${num(b.r)}</td>
-        ${dcell(dR,sgnN)}${dcell(dV,sgnR)}${dcell(dA,sgnR)}
-        <td class="occ" style="background:${occColor(b.occ)}">${b.occ!=null?(b.occ*100).toFixed(2)+'%':'—'}</td></tr>`;}).join('');
-    const dRt=rT-rF,dVt=vT-vF,bF=rF?vF/rF:null,bT=rT?vT/rT:null,dAt=(bF!=null&&bT!=null)?bT-bF:null;
+        <td class="occ" style="background:${occColor(b.occ)}">${b.occ!=null?(b.occ*100).toFixed(2)+'%':'—'}</td>
+        <td class="num">${num(b.r)}</td><td class="num">${rs(b.adr)}</td><td class="num">${rs(b.rev)}</td>
+        ${dcell(dR,sgnN)}${dcell(dV,sgnR)}<td class="num">${adrPk==null?'—':rs(adrPk)}</td>${dcell(adrChg,sgnR)}</tr>`;}).join('');
+    const dRt=rT-rF,dVt=vT-vF,bF=rF?vF/rF:null,bT=rT?vT/rT:null,adrPkt=dRt?dVt/dRt:null,adrChgt=(bF!=null&&bT!=null)?bT-bF:null;
     const avgOcc=occN?occSum/occN:null;
-    const totRow=`<tr class="pk-tot"><td>Total</td><td class="num">${num(rF)}</td><td class="num">${num(rT)}</td>${dcell(dRt,sgnN)}${dcell(dVt,sgnR)}${dcell(dAt,sgnR)}<td class="occ" style="background:${occColor(avgOcc)}">${avgOcc!=null?(avgOcc*100).toFixed(2)+'%':'—'}</td></tr>`;
+    const totRow=`<tr class="pk-tot"><td>Total</td>
+      <td class="occ" style="background:${occColor(avgOcc)}">${avgOcc!=null?(avgOcc*100).toFixed(2)+'%':'—'}</td>
+      <td class="num">${num(rT)}</td><td class="num">${rs(bT)}</td><td class="num">${rs(vT)}</td>
+      ${dcell(dRt,sgnN)}${dcell(dVt,sgnR)}<td class="num">${adrPkt==null?'—':rs(adrPkt)}</td>${dcell(adrChgt,sgnR)}</tr>`;
     return `<div class="pk-panel"><div class="pk-mhead">${MONTHS[+ym.slice(5)]} ${ym.slice(0,4)}</div>
       <div class="pk-scroll"><table class="pk"><thead>
-        <tr><th rowspan="2">Date</th><th colspan="3" class="grp">Rooms OTB</th><th rowspan="2">Rev Δ</th><th rowspan="2">ADR Δ</th><th rowspan="2">Occ%</th></tr>
-        <tr class="subh"><th>${fromL}</th><th>${toL}</th><th>Pickup</th></tr></thead>
+        <tr><th rowspan="2">Date</th><th rowspan="2">Occ%</th><th colspan="3" class="grp">On the Books</th><th colspan="3" class="grp">Pick-up</th><th rowspan="2">ADR Δ</th></tr>
+        <tr class="subh"><th>Rooms</th><th>ADR</th><th>Rev</th><th>Rooms</th><th>Rev</th><th>ADR</th></tr></thead>
       <tbody>${rows}${totRow}</tbody></table></div></div>`;}).join('');
   view.innerHTML=`
-    <div class="summary"><div class="ic">✦</div><div class="tx">Pick-up — on the books at <b>${labelDate(PTO)}</b> vs <b>${labelDate(PFROM)}</b>, by stay date. Rooms OTB shows rooms on the books at each snapshot; <b>Pickup</b>, <b>Rev Δ</b> and <b>ADR Δ</b> are the change (To − From). Occ% shaded by level.</div></div>
+    <div class="summary"><div class="ic">✦</div><div class="tx">Pick-up — on the books at <b>${labelDate(PTO)}</b> vs <b>${labelDate(PFROM)}</b>, by stay date. <b>On the Books</b> = rooms / ADR / revenue as of ${labelDate(PTO).replace(/^\w+, /,'')}. <b>Pick-up</b> = change since ${labelDate(PFROM).replace(/^\w+, /,'')} (pick-up ADR = the rate the new rooms came in at). <b>ADR Δ</b> = ADR change vs the prior snapshot. Occ% shaded by level.</div></div>
     <div class="pk-grid">${panels||'<div class="err">No overlapping stay dates between the two snapshots.</div>'}</div>`;
 }
 function renderPickupActuals(){
