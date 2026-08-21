@@ -166,6 +166,8 @@
   td.str-per,th.str-per{text-align:left;font-weight:600;color:var(--text);background:var(--head);position:sticky;left:0;border-right:1px solid var(--line)}
   table.str td.num{font-variant-numeric:tabular-nums}
   table.str td.idx{color:var(--accent-soft);font-weight:600}
+  table.str td.idx.up{color:var(--good)}
+  table.str td.idx.down{color:var(--bad)}
   table.str tbody tr:hover td{background:#182029}
   table.str tbody tr:hover td.str-per{background:#1b232d}
 </style>
@@ -665,15 +667,20 @@ const STRMETRICS=[
   {key:'revpar',label:'RevPAR',idx:'RGI',fmt:v=>v==null?'—':'₹'+INR2.format(v)},
 ];
 const STR_PERIODS=[['cm','Current Month'],['ytd','Year to Date'],['r3','3 Month Average'],['r12','12 Month Average']];
-function glanceTable(block,title,isChange){
+function glanceTable(block,title,isChange,chg){
   const grpHead=STRMETRICS.map(m=>`<th colspan="3" class="grp">${m.label}</th>`).join('');
   const subHead=STRMETRICS.map(m=>`<th>My Property</th><th>Comp Set</th><th>Index (${m.idx})</th>`).join('');
-  const chgCell=v=>`<td class="num" style="${v!=null&&v<0?'color:var(--bad)':''}">${v==null?'—':(v>=0?'':'−')+Math.abs(v).toFixed(1)+'%'}</td>`;
+  const cls=v=>v==null?'':(v>0?'up':(v<0?'down':''));            // green up / red down vs last year
+  const chgTxt=v=>v==null?'—':(v>=0?'':'−')+Math.abs(v).toFixed(1)+'%';
   const rows=STR_PERIODS.map(([pk,plabel])=>{
     let cells='';
     STRMETRICS.forEach(m=>{const d=(block[m.key]||{})[pk]||{};
-      if(isChange){cells+=chgCell(d.mp)+chgCell(d.cs)+chgCell(d.idx);}
-      else{cells+=`<td class="num">${m.fmt(d.mp)}</td><td class="num">${m.fmt(d.cs)}</td><td class="num idx">${d.idx==null?'—':d.idx.toFixed(1)}</td>`;}
+      if(isChange){
+        cells+=`<td class="num">${chgTxt(d.mp)}</td><td class="num">${chgTxt(d.cs)}</td><td class="num idx ${cls(d.idx)}">${chgTxt(d.idx)}</td>`;
+      }else{
+        const yoy=chg?((chg[m.key]||{})[pk]||{}).idx:null;       // colour index by its YoY movement
+        cells+=`<td class="num">${m.fmt(d.mp)}</td><td class="num">${m.fmt(d.cs)}</td><td class="num idx ${cls(yoy)}">${d.idx==null?'—':d.idx.toFixed(1)}</td>`;
+      }
     });
     return `<tr><td class="str-per">${plabel}</td>${cells}</tr>`;
   }).join('');
@@ -681,6 +688,29 @@ function glanceTable(block,title,isChange){
     <div style="overflow-x:auto"><table class="str"><thead>
       <tr><th rowspan="2" class="str-per"></th>${grpHead}</tr>
       <tr class="subh">${subHead}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+function strInsights(g){
+  const p=g.perf,c=g.change;
+  const mpi=p.occ.cm.idx,ari=p.adr.cm.idx,rgi=p.revpar.cm.idx;
+  const pct=v=>v==null?'n/a':(v>=0?'+':'−')+Math.abs(v).toFixed(1)+'%';
+  const R=v=>'₹'+INR.format(Math.round(v));
+  const driver=(ari>=mpi)?`rate (ARI ${ari.toFixed(1)})`:`occupancy (MPI ${mpi.toFixed(1)})`;
+  const summary=`RevPAR index (RGI) ${rgi.toFixed(1)} — the property is earning ${(rgi-100).toFixed(0)}% more RevPAR than its competitive set this month, led by ${driver}. RevPAR ${pct(c.revpar.cm.mp)} YoY vs comp set ${pct(c.revpar.cm.cs)}.`;
+  const highlights=[
+    {title:`RGI ${rgi.toFixed(1)} — RevPAR ${(rgi-100).toFixed(0)}% above comp set`,detail:`${R(p.revpar.cm.mp)} vs ${R(p.revpar.cm.cs)} comp-set RevPAR.`},
+    {title:`ARI ${ari.toFixed(1)} — ADR ${(ari-100).toFixed(0)}% above comp set`,detail:`${R(p.adr.cm.mp)} vs ${R(p.adr.cm.cs)} comp-set ADR.`},
+    {title:`RevPAR ${pct(c.revpar.cm.mp)} YoY`,detail:`Comp set ${pct(c.revpar.cm.cs)} · RGI ${pct(c.revpar.cm.idx)} vs last year.`},
+  ];
+  const watch=[];
+  [['MPI',mpi,'occupancy'],['ARI',ari,'rate'],['RGI',rgi,'RevPAR']].forEach(([n,v,w])=>{if(v!=null&&v<100)watch.push({title:`${n} below 100 (${v.toFixed(1)})`,detail:`Trailing the comp set on ${w}.`});});
+  if(c.revpar.cm.idx!=null&&c.revpar.cm.idx<0)watch.push({title:`RGI ${pct(c.revpar.cm.idx)} vs last year`,detail:`Comp set grew faster than the property in RevPAR terms this month.`});
+  if(!watch.length)watch.push({title:'Ahead of the comp set on every metric',detail:'MPI, ARI and RGI all above 100 this month.'});
+  const actions=[];
+  if(mpi!=null&&ari!=null&&mpi<ari-10)actions.push({title:'Occupancy index lags rate index',detail:`MPI ${mpi.toFixed(1)} vs ARI ${ari.toFixed(1)} — room to grow occupancy while holding the rate premium.`});
+  if(ari!=null&&mpi!=null&&ari<mpi-10)actions.push({title:'Rate index lags occupancy index',detail:`ARI ${ari.toFixed(1)} vs MPI ${mpi.toFixed(1)} — headroom to push ADR given the occupancy strength.`});
+  if(c.revpar.cm.cs!=null&&c.revpar.cm.mp!=null&&c.revpar.cm.cs>c.revpar.cm.mp)actions.push({title:'Comp set out-growing you YoY',detail:`Comp RevPAR ${pct(c.revpar.cm.cs)} vs your ${pct(c.revpar.cm.mp)} — watch competitor pricing and pace.`});
+  if(!actions.length)actions.push({title:'Hold the premium',detail:'Sustain rate discipline while protecting occupancy; monitor comp-set movements weekly.'});
+  return {summary,highlights,watch,action_items:actions};
 }
 function renderSTR(){
   const view=document.getElementById('view');
@@ -693,7 +723,8 @@ function renderSTR(){
   else{
     body=`<div class="sechead"><h2>${STRSUB==='monthly'?'Monthly':'Weekly'} Performance at a Glance</h2>
       <span class="note">My Property vs. Competitive Set${g.period_label?' · '+g.period_label:''}${g.created?' · Created '+g.created:''}</span></div>
-      ${glanceTable(g.perf,g.period_label||'Performance',false)}
+      ${insightsBlock(strInsights(g))}
+      ${glanceTable(g.perf,g.period_label||'Performance',false,g.change)}
       ${glanceTable(g.change,(g.period_label?g.period_label+' ':'')+'vs. Last Year — % Change',true)}`;
   }
   view.innerHTML=subbar+body;
