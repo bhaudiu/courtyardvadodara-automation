@@ -156,6 +156,18 @@
   table.pk tr:hover td{background:#182029}
   table.pk tr.pk-tot td{background:var(--head);font-weight:700;border-top:1px solid var(--line);position:sticky;bottom:0}
   table.pk tr.pk-tot td.occ{color:#08101a}
+  .str-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:18px}
+  .str-cap{background:var(--head);text-align:center;font-weight:700;font-size:13.5px;padding:10px;border-bottom:1px solid var(--line)}
+  table.str{width:100%;border-collapse:collapse;font-size:12.5px;min-width:760px}
+  table.str th,table.str td{padding:8px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line-soft);border-right:1px solid var(--line-soft)}
+  table.str th.grp{text-align:center;color:var(--accent-soft);font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--line);border-left:1px solid var(--line)}
+  table.str tr.subh th{font-size:10px;color:var(--muted);font-weight:600}
+  table.str thead th{background:var(--head)}
+  td.str-per,th.str-per{text-align:left;font-weight:600;color:var(--text);background:var(--head);position:sticky;left:0;border-right:1px solid var(--line)}
+  table.str td.num{font-variant-numeric:tabular-nums}
+  table.str td.idx{color:var(--accent-soft);font-weight:600}
+  table.str tbody tr:hover td{background:#182029}
+  table.str tbody tr:hover td.str-per{background:#1b232d}
 </style>
 </head>
 <body data-palette="#b0143c">
@@ -172,6 +184,7 @@
 
 <script>
 const INR=new Intl.NumberFormat('en-IN',{maximumFractionDigits:0});
+const INR2=new Intl.NumberFormat('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
 const rs=v=>v==null?'—':'₹'+INR.format(Math.round(v));
 const num=v=>v==null?'—':INR.format(Math.round(v));
 const MONTHS=['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -606,7 +619,7 @@ function renderPickupActuals(){
     <div class="hint">* comparison fell back to the nearest earlier available date (a gap in the data). Rooms Δ = rooms sold change; ADR Δ = rate change; Room Rev Δ = room-revenue change.</div>`;
 }
 
-let PDATE=null,PWIN=1,TAB='dbr',HF=null,HFSNAP=null,PSNAP=null,PFROM=null,PTO=null,PMETRIC='rooms',PDAYS=1;
+let PDATE=null,PWIN=1,TAB='dbr',HF=null,HFSNAP=null,PSNAP=null,PFROM=null,PTO=null,PMETRIC='rooms',PDAYS=1,STAR=null,STRSUB='monthly';
 const winSelHTML=`<select id="pwin"><option value="1">1 night</option><option value="2">2 nights</option><option value="3">3 nights</option><option value="7">7 nights</option></select>`;
 const snapOptsHTML=()=>HF.dates.slice().reverse().map(d=>`<option value="${d}">${labelDate(d)}</option>`).join('');
 function setControls(){
@@ -640,8 +653,51 @@ function selectTab(t){
   setControls();
   if(t==='dbr')renderView(PDATE);
   else if(t==='hf')renderHF();
+  else if(t==='str')renderSTR();
   else renderPickup();
   try{if(location.hash!=='#'+t)history.replaceState(null,'','#'+t);}catch(e){}
+}
+
+/* ---------- STR / STAR ---------- */
+const STRMETRICS=[
+  {key:'occ',label:'Occupancy',idx:'MPI',fmt:v=>v==null?'—':v.toFixed(1)+'%'},
+  {key:'adr',label:'ADR',idx:'ARI',fmt:v=>v==null?'—':'₹'+INR2.format(v)},
+  {key:'revpar',label:'RevPAR',idx:'RGI',fmt:v=>v==null?'—':'₹'+INR2.format(v)},
+];
+const STR_PERIODS=[['cm','Current Month'],['ytd','Year to Date'],['r3','3 Month Average'],['r12','12 Month Average']];
+function glanceTable(block,title,isChange){
+  const grpHead=STRMETRICS.map(m=>`<th colspan="3" class="grp">${m.label}</th>`).join('');
+  const subHead=STRMETRICS.map(m=>`<th>My Property</th><th>Comp Set</th><th>Index (${m.idx})</th>`).join('');
+  const chgCell=v=>`<td class="num" style="${v!=null&&v<0?'color:var(--bad)':''}">${v==null?'—':(v>=0?'':'−')+Math.abs(v).toFixed(1)+'%'}</td>`;
+  const rows=STR_PERIODS.map(([pk,plabel])=>{
+    let cells='';
+    STRMETRICS.forEach(m=>{const d=(block[m.key]||{})[pk]||{};
+      if(isChange){cells+=chgCell(d.mp)+chgCell(d.cs)+chgCell(d.idx);}
+      else{cells+=`<td class="num">${m.fmt(d.mp)}</td><td class="num">${m.fmt(d.cs)}</td><td class="num idx">${d.idx==null?'—':d.idx.toFixed(1)}</td>`;}
+    });
+    return `<tr><td class="str-per">${plabel}</td>${cells}</tr>`;
+  }).join('');
+  return `<div class="str-card"><div class="str-cap">${title}</div>
+    <div style="overflow-x:auto"><table class="str"><thead>
+      <tr><th rowspan="2" class="str-per"></th>${grpHead}</tr>
+      <tr class="subh">${subHead}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+function renderSTR(){
+  const view=document.getElementById('view');
+  const sub=(t,l)=>`<button class="cbtn${STRSUB===t?' on':''}" data-str="${t}">${l}</button>`;
+  const subbar=`<div class="tabnav" style="margin:0 0 20px"><div class="cbtns">${sub('monthly','Monthly')}${sub('weekly','Weekly')}</div></div>`;
+  const g=STRSUB==='monthly'?(STAR&&STAR.monthly):(STAR&&STAR.weekly);
+  let body;
+  if(!STAR){body='<div class="err">STR data not loaded yet.</div>';}
+  else if(!g){body=`<div class="summary"><div class="ic">✦</div><div class="tx">${STRSUB==='weekly'?'Weekly STAR data will appear here once a weekly STAR report is added to the automation.':'No monthly STAR data available.'}</div></div>`;}
+  else{
+    body=`<div class="sechead"><h2>${STRSUB==='monthly'?'Monthly':'Weekly'} Performance at a Glance</h2>
+      <span class="note">My Property vs. Competitive Set${g.period_label?' · '+g.period_label:''}${g.created?' · Created '+g.created:''}</span></div>
+      ${glanceTable(g.perf,g.period_label||'Performance',false)}
+      ${glanceTable(g.change,(g.period_label?g.period_label+' ':'')+'vs. Last Year — % Change',true)}`;
+  }
+  view.innerHTML=subbar+body;
+  document.querySelectorAll('#view .cbtn[data-str]').forEach(b=>b.onclick=()=>{STRSUB=b.dataset.str;renderSTR();});
 }
 function render(d){
   DATA=d;
@@ -654,18 +710,22 @@ function render(d){
       <button class="tab active" data-tab="dbr">DBR</button>
       <button class="tab" data-tab="hf">H&amp;F</button>
       <button class="tab" data-tab="pickup">Pick-up</button>
+      <button class="tab" data-tab="str">STR</button>
     </div></div>
     <div id="view"></div>`;
   document.getElementById('stamp').textContent='Updated '+new Date(d.generated_at).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
   document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>selectTab(b.dataset.tab));
   const h=(location.hash||'').replace('#','');
-  selectTab(['dbr','hf','pickup'].includes(h)?h:'dbr');
-  window.addEventListener('hashchange',()=>{const x=(location.hash||'').replace('#','');if(['dbr','hf','pickup'].includes(x)&&x!==TAB)selectTab(x);});
+  selectTab(['dbr','hf','pickup','str'].includes(h)?h:'dbr');
+  window.addEventListener('hashchange',()=>{const x=(location.hash||'').replace('#','');if(['dbr','hf','pickup','str'].includes(x)&&x!==TAB)selectTab(x);});
 }
 fetch('./data.json?ts='+Date.now()).then(r=>{if(!r.ok)throw 0;return r.json()}).then(d=>{
   render(d);
   fetch('./hf.json?ts='+Date.now()).then(r=>r.ok?r.json():null).then(h=>{
     if(h&&h.snaps&&h.dates&&h.dates.length){HF=h;HFSNAP=h.latest;PSNAP=h.latest;PTO=h.latest;PDAYS=1;PFROM=snapFrom(PTO,PDAYS);if(TAB!=='dbr'){setControls();selectTab(TAB);}}
+  }).catch(()=>{});
+  fetch('./star.json?ts='+Date.now()).then(r=>r.ok?r.json():null).then(s=>{
+    if(s){STAR=s;if(TAB==='str')renderSTR();}
   }).catch(()=>{});
 }).catch(()=>{document.getElementById('app').innerHTML='<div class="err">No report data yet.</div>';});
 </script>
