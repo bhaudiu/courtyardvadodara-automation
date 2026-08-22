@@ -2981,12 +2981,12 @@
 "occupied": 72.0,
 "occupancy": 0.5950413223140496,
 "adr": 7878.03,
-"revpar": 4643.652892561983,
+"revpar": 4687.752396694215,
 "total_covers": 283.0,
 "apc": 921.8157950530035,
-"room_revenue": 561882.0,
+"room_revenue": 567218.04,
 "fb_revenue": 260873.87,
-"ood_revenue": 41425.54,
+"ood_revenue": 36089.5,
 "total_hotel_revenue": 864181.41
 },
 "fb_details": {
@@ -3056,10 +3056,6 @@
 {
 "name": "Guest Laundry",
 "revenue": 3464.5
-},
-{
-"name": "Others Misc.",
-"revenue": 5300.0
 }
 ]
 },
@@ -3161,12 +3157,12 @@
 "occupied": 111.0,
 "occupancy": 0.9173553719008265,
 "adr": 9353.23,
-"revpar": 8563.706776859504,
+"revpar": 8580.235702479338,
 "total_covers": 290.0,
 "apc": 1140.7488620689655,
-"room_revenue": 1036208.52,
+"room_revenue": 1038208.52,
 "fb_revenue": 330817.17,
-"ood_revenue": 72625.6,
+"ood_revenue": 70625.6,
 "total_hotel_revenue": 1439651.29
 },
 "fb_details": {
@@ -3240,10 +3236,6 @@
 {
 "name": "Wine Shop",
 "revenue": 40205.6
-},
-{
-"name": "Others Misc.",
-"revenue": 2000.0
 }
 ]
 },
@@ -3253,12 +3245,12 @@
 "occupied": 70.0,
 "occupancy": 0.5785123966942148,
 "adr": 8811.99,
-"revpar": 5097.731735537191,
+"revpar": 5097.843719008264,
 "total_covers": 308.0,
 "apc": 1011.3675324675326,
-"room_revenue": 616825.54,
+"room_revenue": 616839.09,
 "fb_revenue": 311501.2,
-"ood_revenue": 24699.55,
+"ood_revenue": 24686.000000000116,
 "total_hotel_revenue": 953026.29
 },
 "fb_details": {
@@ -3328,6 +3320,10 @@
 {
 "name": "Guest Laundry",
 "revenue": 8686.0
+},
+{
+"name": "Others Misc.",
+"revenue": 1.1641532182693481e-10
 }
 ]
 },
@@ -3337,12 +3333,12 @@
 "occupied": 121.0,
 "occupancy": 1.0,
 "adr": 10307.5,
-"revpar": 10290.96479338843,
+"revpar": 10307.497024793387,
 "total_covers": 271.0,
 "apc": 841.6319926199261,
-"room_revenue": 1245206.74,
+"room_revenue": 1247207.14,
 "fb_revenue": 228082.27,
-"ood_revenue": 138585.26,
+"ood_revenue": 136584.86,
 "total_hotel_revenue": 1611874.27
 },
 "fb_details": {
@@ -3419,7 +3415,7 @@
 },
 {
 "name": "Others Misc.",
-"revenue": 10000.0
+"revenue": 8000.0
 }
 ]
 },
@@ -3429,12 +3425,12 @@
 "occupied": 121.0,
 "occupancy": 1.0,
 "adr": 9159.53,
-"revpar": 9143.004132231405,
+"revpar": 9159.53305785124,
 "total_covers": 332.0,
 "apc": 1098.572078313253,
-"room_revenue": 1106303.5,
+"room_revenue": 1108303.5,
 "fb_revenue": 364725.93,
-"ood_revenue": 100374.91,
+"ood_revenue": 98374.91,
 "total_hotel_revenue": 1571404.3399999999
 },
 "fb_details": {
@@ -3511,7 +3507,7 @@
 },
 {
 "name": "Others Misc.",
-"revenue": 15000.0
+"revenue": 13000.0
 }
 ]
 },
@@ -3521,12 +3517,12 @@
 "occupied": 111.0,
 "occupancy": 0.9173553719008265,
 "adr": 8291.98,
-"revpar": 7590.163223140496,
+"revpar": 7606.69214876033,
 "total_covers": 304.0,
 "apc": 1066.9888157894736,
-"room_revenue": 918409.75,
+"room_revenue": 920409.75,
 "fb_revenue": 324364.6,
-"ood_revenue": 86307.12,
+"ood_revenue": 84307.12,
 "total_hotel_revenue": 1329081.47
 },
 "fb_details": {
@@ -3600,10 +3596,6 @@
 {
 "name": "Wine Shop",
 "revenue": 50910.87
-},
-{
-"name": "Others Misc.",
-"revenue": 2000.0
 }
 ]
 },
@@ -35149,13 +35141,13 @@
 "occupied": 92.0,
 "occupancy": 0.7603305785123967,
 "adr": 7937.04,
-"revpar": 5968.626528925621,
+"revpar": 6034.772975206612,
 "total_covers": 274.0,
 "apc": 966.9863503649635,
-"room_revenue": 722203.81,
+"room_revenue": 730207.53,
 "fb_revenue": 264954.26,
-"ood_revenue": 87392.56,
-"total_hotel_revenue": 1074550.6300000001
+"ood_revenue": 79388.84,
+"total_hotel_revenue": 1074550.63
 },
 "fb_details": {
 "total_rnl": 189626.94,
@@ -35224,10 +35216,6 @@
 {
 "name": "Wine Shop",
 "revenue": 57550.84
-},
-{
-"name": "Others Misc.",
-"revenue": 8000.0
 }
 ]
 }
