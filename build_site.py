@@ -198,6 +198,47 @@ def build_report_for(iso, days, anchor_iso, anchor_sections):
                 r["today_var"] = var(r["today_ty"], r["today_bud"])
                 r["mtd_var"] = var(r["mtd_ty"], r["mtd_bud"])
                 r["ytd_var"] = var(r["ytd_ty"], r["ytd_bud"])
+
+        # Keep the rooms-statistics block internally consistent with the
+        # Manager-Flash-overridden components. Occupied Rooms / Room Revenue are
+        # now full-period totals, so the available-room denominator must be too —
+        # a missing daily report leaves the daily-sum capacity short by a day.
+        # Physical capacity (= budgeted rooms, OOO is 0 here) is the correct
+        # full-period available count, so pin actual & LY available to budget,
+        # then recompute Occupancy% / ADR / RevPAR from the corrected figures.
+        idx = {}
+        for s in out:
+            for r in s["rows"]:
+                idx[r["label"].strip()] = r
+        for cap_lbl in ("Total Rooms in Hotel", "Total Rooms in Hotel minus OOO Rooms"):
+            r = idx.get(cap_lbl)
+            if r:
+                if r.get("mtd_bud") is not None:
+                    r["mtd_ty"] = r["mtd_ly"] = r["mtd_bud"]
+                if r.get("ytd_bud") is not None:
+                    r["ytd_ty"] = r["ytd_ly"] = r["ytd_bud"]
+                r["mtd_var"] = var(r["mtd_ty"], r["mtd_bud"])
+                r["ytd_var"] = var(r["ytd_ty"], r["ytd_bud"])
+        occ = idx.get("Occupied Rooms")
+        rrev = idx.get("Room Revenue")
+        avail = idx.get("Total Rooms in Hotel minus OOO Rooms") or idx.get("Total Rooms in Hotel")
+
+        def _derive(lbl, num_row, den_row):
+            r = idx.get(lbl)
+            if not (r and num_row and den_row):
+                return
+            for per in ("mtd", "ytd"):
+                n_ty, d_ty = num_row.get(per + "_ty"), den_row.get(per + "_ty")
+                if n_ty is not None and d_ty:
+                    r[per + "_ty"] = n_ty / d_ty
+                n_ly, d_ly = num_row.get(per + "_ly"), den_row.get(per + "_ly")
+                if n_ly is not None and d_ly:
+                    r[per + "_ly"] = n_ly / d_ly
+                r[per + "_var"] = var(r.get(per + "_ty"), r.get(per + "_bud"))
+
+        _derive("Occupancy (%)", occ, avail)
+        _derive("ADR", rrev, occ)
+        _derive("RevPar", rrev, avail)
     return out
 
 
