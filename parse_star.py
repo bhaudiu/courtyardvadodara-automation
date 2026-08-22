@@ -33,6 +33,43 @@ def block(ws, period_rows):
     return out
 
 
+MONTHS = {"Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
+          "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12}
+
+# Comp sheet monthly-trend rows (My Property / Comp Set / Index) per metric.
+TREND_ROWS = {"occ": (21, 22, 23), "adr": (33, 34, 35), "revpar": (45, 46, 47)}
+
+
+def parse_comp_trend(wb):
+    """Monthly time-series from the 'Comp' tab: My Property vs Competitive Set
+    (and the index) for Occupancy / ADR / RevPAR, across the trailing months."""
+    if "Comp" not in wb.sheetnames:
+        return None
+    ws = wb["Comp"]
+    # month header on row 20; a year appears on row 19 at the first column of each year.
+    cols, months, cur_year = [], [], None
+    for c in range(3, 40):
+        yv = ws.cell(19, c).value
+        if isinstance(yv, (int, float)) and 2000 < yv < 2100:
+            cur_year = int(yv)
+        mon = ws.cell(20, c).value
+        if mon in MONTHS and cur_year:
+            cols.append(c)
+            months.append(f"{cur_year}-{MONTHS[mon]:02d}")
+        elif mon not in MONTHS and cols:
+            break   # trailing YTD / running-average summary columns begin
+    if not cols:
+        return None
+
+    def series(row):
+        return [numf(ws, row, c) for c in cols]
+
+    out = {"months": months}
+    for key, (mp, cs, idx) in TREND_ROWS.items():
+        out[key] = {"mp": series(mp), "cs": series(cs), "idx": series(idx)}
+    return out
+
+
 def parse_glance(path):
     wb = openpyxl.load_workbook(path, data_only=True)
     ws = wb["Glance"]
@@ -48,6 +85,7 @@ def parse_glance(path):
         "property": prop,
         "perf": block(ws, PERIODS),
         "change": block(ws, CHG_PERIODS),
+        "trend": parse_comp_trend(wb),
     }
 
 
