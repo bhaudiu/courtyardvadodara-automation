@@ -695,17 +695,16 @@ function renderView(iso){
       <div><span class="tv">${t.val}</span>${t.v!=null?`<span class="tc" style="color:${t.v>=0?'var(--good)':'var(--bad)'}">${dpc(t.v)}</span>`:''}</div>
       ${spark2(ser,t.k,t.lk,t.c)}</div>`).join('')}</div></div>`;
 
-  // Outlet Snapshot donuts
+  // Outlet Snapshot donuts — Today vs Month-to-Date F&B revenue split
   const rnl=fb.total_rnl||0,bq=fb.banquet_other||0,ird=fb.ird||0,other=Math.max(0,(oi.fb_revenue||0)-rnl-bq-ird);
   const revSegs=[{n:'RNL',v:rnl,c:'#3f6fd8'},{n:'Banquet',v:bq,c:'#8a5cc0'},{n:'IRD',v:ird,c:'#2aa7b8'},{n:'Others',v:other,c:'#9aa6b8'}];
-  const rest=new Set(['812 CE','812 Meal Plan','Brubon Café','MBOW','Baroda Grill (BGC)','The Deck (Starbucks)']);
-  let rnlC=0,bqC=0,irdC=0;day.outlet_details.forEach(o=>{const c=o.covers||0;if(o.name==='Banquet')bqC+=c;else if(o.name==='IRD')irdC+=c;else if(rest.has(o.name))rnlC+=c;});
-  const totC=oi.total_covers||(rnlC+bqC+irdC),othC=Math.max(0,totC-rnlC-bqC-irdC);
-  const covSegs=[{n:'RNL',v:rnlC,c:'#3f6fd8'},{n:'Banquet',v:bqC,c:'#8a5cc0'},{n:'IRD',v:irdC,c:'#2aa7b8'},{n:'Others',v:othC,c:'#9aa6b8'}];
-  const donutHTML=`<div class="ncard"><div class="ch"><span class="i">🏨</span>Outlet Snapshot<span class="note">Today</span></div>
+  const rnlM=R('Total RNL').mtd_ty||0,bqM=R('Banquet & Other Than F&B').mtd_ty||0,irdM=R('IRD').mtd_ty||0,fbM=R('F&B Revenue').mtd_ty||0;
+  const otherM=Math.max(0,fbM-rnlM-bqM-irdM);
+  const revSegsM=[{n:'RNL',v:rnlM,c:'#3f6fd8'},{n:'Banquet',v:bqM,c:'#8a5cc0'},{n:'IRD',v:irdM,c:'#2aa7b8'},{n:'Others',v:otherM,c:'#9aa6b8'}];
+  const donutHTML=`<div class="ncard"><div class="ch"><span class="i">🏨</span>Outlet Snapshot<span class="note">F&amp;B revenue mix · Today &amp; MTD</span></div>
     <div class="donuts">
-      <div class="donut"><div class="dtt">Share of F&amp;B Revenue</div>${donutSvg(revSegs,rsL(oi.fb_revenue),'F&B rev')}</div>
-      <div class="donut"><div class="dtt">Total Covers</div>${donutSvg(covSegs,num(totC),'covers')}</div>
+      <div class="donut"><div class="dtt">Share of F&amp;B Revenue — Today</div>${donutSvg(revSegs,rsL(oi.fb_revenue),'F&B rev')}</div>
+      <div class="donut"><div class="dtt">Share of F&amp;B Revenue — MTD</div>${donutSvg(revSegsM,rsL(fbM),'MTD F&B')}</div>
     </div></div>`;
 
   // Highlights
