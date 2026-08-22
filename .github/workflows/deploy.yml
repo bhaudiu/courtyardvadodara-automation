@@ -26,6 +26,7 @@ jobs:
           IMAP_HOST: ${{ secrets.IMAP_HOST }}
           IMAP_USER: ${{ secrets.IMAP_USER }}
           IMAP_PASS: ${{ secrets.IMAP_PASS }}
+          IMAP_LOOKBACK: "700"
       - name: Build dashboard data
         run: python3 build_site.py
       - name: Commit updated data (Cloudflare Pages auto-deploys)
