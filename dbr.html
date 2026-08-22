@@ -1310,5 +1310,22 @@ fetch('./data.json?ts='+Date.now()).then(r=>{if(!r.ok)throw 0;return r.json()}).
   }).catch(()=>{});
 }).catch(()=>{document.getElementById('app').innerHTML='<div class="err">No report data yet.</div>';});
 </script>
+<script>
+/* DEV/PROD marker — shows a "DEV" ribbon only on the *.pages.dev testing site;
+   invisible on the production custom domain. Safe on every host. */
+(function(){try{
+  var h=(location.hostname||'');
+  var isDev = /\.pages\.dev$/.test(h) || h==='localhost' || h==='127.0.0.1';
+  if(!isDev) return;
+  var b=document.createElement('div');
+  b.textContent='DEV';
+  b.setAttribute('aria-hidden','true');
+  b.style.cssText='position:fixed;z-index:99999;top:10px;right:10px;'
+    +'background:#c67a12;color:#fff;font:700 11px/1 -apple-system,Segoe UI,Roboto,sans-serif;'
+    +'letter-spacing:.12em;padding:6px 10px;border-radius:6px;'
+    +'box-shadow:0 2px 8px rgba(0,0,0,.25);pointer-events:none;opacity:.92';
+  document.body.appendChild(b);
+}catch(e){}})();
+</script>
 </body>
 </html>
