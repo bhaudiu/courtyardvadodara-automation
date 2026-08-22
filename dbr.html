@@ -1138,7 +1138,7 @@ function strSeries(tr,n){
     cs:(chg?tr[STRTM].cs_chg:tr[STRTM].cs).slice(-n),
     idx:tr[STRTM].idx.slice(-n)};
 }
-const CMP='#b0143c',CCS='#4f9fd0',CGR='#c99a3f';
+const CMP='#b0143c',CCS='#4f9fd0',CGR='#e0912f',CGR2='#8a5cc0';   // value: red/blue · growth: amber(MP)/purple(Comp)
 function strChartSVG(tr,n){
   const m=STRTMETRICS[STRTM],both=STRVIEW==='both',chg=STRVIEW==='chg';
   const months=tr.months.slice(-n);
@@ -1162,15 +1162,15 @@ function strChartSVG(tr,n){
     if(both){const rv=gmin+(gmax-gmin)*gI/4;grid+=`<text x="${W-pr+6}" y="${(gy+4).toFixed(1)}" text-anchor="start" fill="${CGR}" font-size="9.5">${(rv>=0?'+':'')+rv.toFixed(0)+'%'}</text>`;}}
   const zline=v=>`<line x1="${pl}" y1="${v.toFixed(1)}" x2="${W-pr}" y2="${v.toFixed(1)}" stroke="#9aa6b8" stroke-width="1.2"/>`;
   const zero=chg&&lmin<0&&lmax>0?zline(yL(0)):(both&&gmin<0&&gmax>0?zline(yR(0)):'');
-  // growth bars (both mode)
-  let bars='';
-  if(both){const bw=Math.max(3,(W-pl-pr)/months.length*0.5);mpG.forEach((g,i)=>{if(g==null)return;const y0=yR(0),y1=yR(g),top=Math.min(y0,y1),h=Math.abs(y0-y1);bars+=`<rect x="${(x(i)-bw/2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0.5,h).toFixed(1)}" fill="${CGR}" opacity="0.28" rx="2"/>`;});}
   const step=Math.max(1,Math.ceil(months.length/12));
   let xl='';months.forEach((ym,i)=>{if(i%step===0||i===months.length-1)xl+=`<text x="${x(i).toFixed(1)}" y="${H-8}" text-anchor="middle" fill="var(--faint)" font-size="9.5">${strMonLabel(ym)}</text>`;});
   const dots=(arr,col,yf)=>arr.map((v,i)=>v==null?'':`<circle cx="${x(i).toFixed(1)}" cy="${yf(v).toFixed(1)}" r="2.4" fill="#fff" stroke="${col}" stroke-width="1.6"/>`).join('');
   const hit=months.map((ym,i)=>`<rect x="${(x(i)-(W-pl-pr)/months.length/2).toFixed(1)}" y="${pt}" width="${((W-pl-pr)/months.length).toFixed(1)}" height="${H-pt-pb}" fill="transparent" class="shit" data-i="${i}"/>`).join('');
+  // growth lines (both mode) — dashed, on the right axis, distinct colours
+  let gline='';
+  if(both){gline=`<path d="${path(csG,yR)}" fill="none" stroke="${CGR2}" stroke-width="2" stroke-dasharray="5 4" opacity="0.9"/><path d="${path(mpG,yR)}" fill="none" stroke="${CGR}" stroke-width="2.2" stroke-dasharray="5 4"/>${dots(csG,CGR2,yR)}${dots(mpG,CGR,yR)}`;}
   const lines=`<path d="${path(primary2,yL)}" fill="none" stroke="${CCS}" stroke-width="2.1"/><path d="${path(primary,yL)}" fill="none" stroke="${CMP}" stroke-width="2.6"/>${dots(primary2,CCS,yL)}${dots(primary,CMP,yL)}`;
-  return `<svg viewBox="0 0 ${W} ${H}">${grid}${bars}${zero}${lines}
+  return `<svg viewBox="0 0 ${W} ${H}">${grid}${zero}${gline}${lines}
     <line id="scr" x1="0" y1="${pt}" x2="0" y2="${H-pb}" stroke="${CMP}" stroke-dasharray="3 3" opacity="0"/>${xl}${hit}</svg>`;
 }
 function strTrendCard(tr){
@@ -1190,7 +1190,7 @@ function strTrendCard(tr){
     <div class="chhead" style="margin:0 0 6px"><div class="cbtns">${vbtns}</div><span class="note" style="font-weight:600;margin-left:6px">Range</span><div class="cbtns">${rbtns}</div>
       <span class="note">${cap}</span></div>
     <div class="chartwrap" id="scw" style="padding:0 4px">${svg}<div class="tt" id="stt"></div></div>
-    <div class="chleg"><span style="color:${CMP}"><i></i>My Property${chg?' YoY':''}</span><span style="color:${CCS}"><i></i>Competitive Set${chg?' YoY':''}</span>${both?`<span style="color:${CGR}"><i></i>My Prop YoY growth (bars, right axis)</span>`:''}</div></div>`;
+    <div class="chleg"><span style="color:${CMP}"><i></i>My Property${chg?' YoY':''}</span><span style="color:${CCS}"><i></i>Competitive Set${chg?' YoY':''}</span>${both?`<span style="color:${CGR}"><i class="dash"></i>My Prop YoY %</span><span style="color:${CGR2}"><i class="dash"></i>Comp YoY %</span><span class="note">(dashed = growth, right axis)</span>`:''}</div></div>`;
 }
 function wireStrTrend(tr){
   document.querySelectorAll('#view .cbtn[data-sm]').forEach(b=>b.onclick=()=>{STRTM=b.dataset.sm;renderSTR();});
@@ -1211,7 +1211,7 @@ function wireStrTrend(tr){
     let html=`${strMonLabel(months[i])} · `;
     if(chg){html+=`<b style="color:${CMP}">${pct(mpG[i])}</b><br><span style="color:${CCS}">Comp ${pct(csG[i])}</span>`;}
     else{html+=`<b style="color:${CMP}">${m.fmt(mpV[i])}</b><br><span style="color:${CCS}">Comp ${m.fmt(csV[i])}</span>`
-      +(both?`<br><span style="color:${CGR}">YoY ${pct(mpG[i])}</span>`:`<br><span style="color:${idx[i]>=100?'var(--good)':'var(--bad)'}">${m.idx} ${idx[i]==null?'—':idx[i].toFixed(1)}</span>`);}
+      +(both?`<br><span style="color:${CGR}">YoY ${pct(mpG[i])}</span> <span style="color:${CGR2}">Comp ${pct(csG[i])}</span>`:`<br><span style="color:${idx[i]>=100?'var(--good)':'var(--bad)'}">${m.idx} ${idx[i]==null?'—':idx[i].toFixed(1)}</span>`);}
     tt.innerHTML=html;
   }));
   cw.addEventListener('mouseleave',()=>{tt.style.opacity='0';cr.setAttribute('opacity','0');});
