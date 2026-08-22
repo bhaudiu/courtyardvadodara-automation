@@ -109,6 +109,8 @@ def tb_bucket(code: str) -> str:
     c = int(code)
     if 10000 <= c <= 10999:
         return "room_revenue"
+    if 12000 <= c <= 12999:
+        return "room_revenue"  # room ancillary: extra bed, day-use, early check-in, no-show, etc.
     if c == 20100:
         return "wine_shop"
     if c in (21123, 21124):
@@ -134,7 +136,7 @@ def tb_bucket(code: str) -> str:
     if c == 70014 or (70020 <= c <= 70029):
         return "spa"
     if c == 99202:
-        return "round_off"
+        return "room_revenue"  # round-off — Manager Flash folds it into Room Revenue
     return "other_misc"
 
 
@@ -259,7 +261,15 @@ def build_grr_day(mf_path, tb_path, do_path) -> dict:
     total_rooms = mf["total_rooms_available"]
     rooms_occ = mf["rooms_occupied_net"]
     comp = mf["complimentary_rooms"] or 0
-    room_rev = b.get("room_revenue", mf["mf_room_revenue"])
+    # Room Revenue is AUTHORITATIVE from Manager Flash (the DAY column) — that is
+    # the figure the owner report shows and the one ADR is taken from. The Trial
+    # Balance room-GL sum can drift by round-off / ancillary codes, so prefer MF
+    # and reclassify the (usually tiny) residual into Others so the grand total
+    # still reconciles to Manager Flash.  [fix: Room Revenue not matching]
+    tb_room = b.get("room_revenue", 0.0)
+    mf_room = mf["mf_room_revenue"]
+    room_rev = mf_room if mf_room is not None else tb_room
+    room_resid = (tb_room - room_rev) if mf_room is not None else 0.0
     occupancy = (rooms_occ / total_rooms) if (rooms_occ and total_rooms) else None
     adr = mf["adr_net"]
     revpar = (room_rev / total_rooms) if (room_rev and total_rooms) else None
@@ -269,7 +279,7 @@ def build_grr_day(mf_path, tb_path, do_path) -> dict:
         "guest_laundry": b.get("guest_laundry", 0.0),
         "wine_shop": b.get("wine_shop", 0.0),
         "spa": b.get("spa", 0.0),
-        "other_misc": b.get("other_misc", 0.0),
+        "other_misc": b.get("other_misc", 0.0) + room_resid,
         "round_off": b.get("round_off", 0.0),
     }
     other_total = sum(other_block.values())
