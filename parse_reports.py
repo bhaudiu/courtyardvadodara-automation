@@ -82,6 +82,20 @@ def parse_manager_flash(path: str) -> dict:
                         return nums[0]
         return None
 
+    def dmy(label):
+        """All numbers on an exact-label line. Manager Flash columns are
+        2026 DAY / MONTH / YEAR then 2025 DAY / MONTH / YEAR, so this returns
+        {day, mtd, ytd, ly_day, ly_mtd, ly_ytd} (missing ones are None)."""
+        for ln in lines:
+            s = ln.strip()
+            if s.startswith(label) and (len(s) == len(label) or not s[len(label)].isalpha()):
+                n = numbers_in(s[len(label):])
+                g = lambda i: n[i] if len(n) > i else None
+                return {"day": g(0), "mtd": g(1), "ytd": g(2),
+                        "ly_day": g(3), "ly_mtd": g(4), "ly_ytd": g(5)}
+        return {"day": None, "mtd": None, "ytd": None,
+                "ly_day": None, "ly_mtd": None, "ly_ytd": None}
+
     # business date from header like "12-08-26"
     biz_date = None
     m = re.search(r"(\d{2})-(\d{2})-(\d{2})", text)
@@ -102,6 +116,14 @@ def parse_manager_flash(path: str) -> dict:
         "mf_fb_revenue": day_value("Food And Beverage Revenue"),
         "mf_other_revenue": day_value("Other Revenue"),
         "mf_total_revenue": day_value("Total Revenue"),
+        # authoritative MTD (MONTH) / YTD (YEAR) revenue straight from Manager Flash —
+        # used to override the reconstructed sums (which can't see missing/older days).
+        "mf_periods": {
+            "room": dmy("Room Revenue"),
+            "fb": dmy("Food And Beverage Revenue"),
+            "ood": dmy("Other Revenue"),
+            "total": dmy("Total Revenue"),
+        },
     }
 
 
@@ -367,6 +389,7 @@ def build_grr_day(mf_path, tb_path, do_path) -> dict:
         "fb_details": fb_details,
         "outlet_details": outlet_details,
         "ood": ood,
+        "mf_periods": mf.get("mf_periods"),
         "business_date": biz_date.isoformat() if biz_date else None,
         "rooms": {
             "total_available": total_rooms,

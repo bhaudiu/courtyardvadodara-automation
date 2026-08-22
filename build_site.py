@@ -41,6 +41,7 @@ def normalize(day):
                             "avg_check": o["avg_check"], "revenue": o["revenue"]}
                            for o in day["outlet_details"]],
         "ood": [{"name": o["name"], "revenue": o["revenue"]} for o in day["ood"]],
+        "mf_periods": day.get("mf_periods"),
     }
 
 
@@ -169,6 +170,33 @@ def build_report_for(iso, days, anchor_iso, anchor_sections):
             row["label"], row["kind"] = r["label"], r["kind"]
             rows.append(row)
         out.append({"title": s["title"], "rows": rows})
+
+    # Override the summary revenue MTD/YTD with the AUTHORITATIVE Manager Flash
+    # MONTH/YEAR columns for this day — the reconstructed daily sums can't see
+    # missing days (e.g. 13 Aug) or un-re-parsed older days, so MTD/YTD drift.
+    mfp = days.get(iso, {}).get("mf_periods")
+    if mfp:
+        LMAP = {"Room Revenue": "room", "F&B Revenue": "fb",
+                "OOD Revenue": "ood", "Total Hotel Revenue": "total"}
+        for s in out:
+            for r in s["rows"]:
+                key = LMAP.get(r["label"].strip())
+                p = mfp.get(key) if key else None
+                if not p:
+                    continue
+                if p.get("day") is not None:
+                    r["today_ty"] = p["day"]
+                if p.get("mtd") is not None:
+                    r["mtd_ty"] = p["mtd"]
+                if p.get("ytd") is not None:
+                    r["ytd_ty"] = p["ytd"]
+                if p.get("ly_mtd") is not None:
+                    r["mtd_ly"] = p["ly_mtd"]
+                if p.get("ly_ytd") is not None:
+                    r["ytd_ly"] = p["ly_ytd"]
+                r["today_var"] = var(r["today_ty"], r["today_bud"])
+                r["mtd_var"] = var(r["mtd_ty"], r["mtd_bud"])
+                r["ytd_var"] = var(r["ytd_ty"], r["ytd_bud"])
     return out
 
 
