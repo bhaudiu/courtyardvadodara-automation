@@ -291,6 +291,31 @@
   .detailhead h2{font-size:16px;font-weight:800}
   .detailhead .tag{font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#fff;background:var(--accent);padding:3px 9px;border-radius:6px}
 
+  /* ===== Pick-up: Today's snapshot + 3-month pace summary ===== */
+  .snapsec{margin:0 0 18px}
+  .snaphdr{background:linear-gradient(90deg,#1f3a4d,#274b62);color:#fff;font-size:12px;font-weight:700;letter-spacing:.5px;padding:10px 15px;border-radius:10px 10px 0 0;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .snaphdr .sh-sub{font-weight:500;color:#a9c3d4;font-size:11.5px}
+  .snaptiles{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;padding:13px;background:var(--card);border:1px solid var(--line);border-top:none;border-radius:0 0 11px 11px}
+  @media(max-width:820px){.snaptiles{grid-template-columns:repeat(2,1fr)}}
+  .snaptile{border:1px solid var(--line);border-left:4px solid #ccd;border-radius:8px;padding:11px 14px;background:#fff;text-align:center}
+  .snaptile .st-l{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;display:flex;gap:6px;align-items:center;justify-content:center}
+  .snaptile .st-v{font-size:25px;font-weight:800;margin-top:5px;letter-spacing:-.5px}
+  .snaptile .st-s{font-size:11px;color:var(--faint);margin-top:2px}
+  .pacewrap{border:1px solid var(--line);border-top:none;border-radius:0 0 11px 11px;overflow-x:auto;background:var(--card)}
+  table.pace{width:100%;border-collapse:collapse;font-size:12.5px;min-width:820px}
+  table.pace th,table.pace td{padding:10px 13px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--line-soft)}
+  table.pace thead th{background:#eaf0f4;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:#3a5567;font-weight:700}
+  table.pace tbody td{font-variant-numeric:tabular-nums}
+  table.pace td.mn{font-weight:700}
+  table.pace th.pk,table.pace td.pk{background:#eaf7ee}
+  table.pace thead th.pk{background:#dcefe1;color:#1f7a44}
+  table.pace tr:last-child td{border-bottom:none}
+  table.pace .fc-in{width:132px;text-align:center;font-variant-numeric:tabular-nums;border:1px solid #b9c6d2;border-radius:6px;padding:5px 8px;font-size:12.5px;font-weight:700;color:var(--text);background:#fffdf3}
+  table.pace .fc-in:focus{outline:2px solid var(--accent);border-color:var(--accent)}
+  table.pace td.gap.pos{color:var(--bad);font-weight:700}
+  table.pace td.gap.neg{color:var(--good);font-weight:700}
+  .fc-hint{font-size:11px;color:var(--faint);padding:9px 13px;display:flex;align-items:center;gap:6px}
+
   @media print{
     @page{size:A4 landscape;margin:9mm}
     .side,.top .tools,#controls,.banner{display:none!important}
@@ -878,10 +903,67 @@ function renderPickup(){
         <tr><th rowspan="2">Date</th><th rowspan="2">Occ%</th><th colspan="3" class="grp">On the Books</th><th colspan="3" class="grp">Pick-up</th><th rowspan="2">ADR Δ</th></tr>
         <tr class="subh"><th>Rooms</th><th>ADR</th><th>Rev</th><th>Rooms</th><th>Rev</th><th>ADR</th></tr></thead>
       <tbody>${rows}${totRow}</tbody></table></div></div>`;}).join('');
+  // ===== Today's snapshot (the "To" date) =====
+  const tb=B[PTO]||{},ta=A[PTO]||{};
+  const tPk=(tb.r!=null&&ta.r!=null)?tb.r-ta.r:null;
+  const td=dObj(PTO);
+  const tile=(l,ic,col,v,s)=>`<div class="snaptile" style="border-left-color:${col}"><div class="st-l">${ic} ${l}</div><div class="st-v" style="color:${col}">${v}</div>${s?`<div class="st-s">${s}</div>`:''}</div>`;
+  const todayHTML=`<div class="snapsec">
+    <div class="snaphdr">📌 TODAY'S SNAPSHOT<span class="sh-sub">${labelDate(PTO)}</span></div>
+    <div class="snaptiles">
+      ${tile('Today Occ %','🛏️','#1f7a8c',tb.occ==null?'—':(tb.occ*100).toFixed(0)+'%','on the books')}
+      ${tile('Rooms on Books','📗','#1f9d57',num(tb.r),'rooms sold '+labelDate(PTO).replace(/^\w+, /,''))}
+      ${tile('Today Pickup','▲','#8a5cc0',tPk==null?'—':(tPk>=0?'+':'−')+num(Math.abs(tPk)),'vs '+labelDate(PFROM).replace(/^\w+, /,''))}
+      ${tile('Today ADR','₹','#d1841c',rs(tb.adr),'blended')}
+    </div></div>`;
+
+  // ===== 3-month pace summary (current month + next 2), editable forecast =====
+  let [py,pm]=PTO.slice(0,7).split('-').map(Number);
+  const months=[];for(let i=0;i<3;i++){months.push(`${py}-${String(pm).padStart(2,'0')}`);pm++;if(pm>12){pm=1;py++;}}
+  function loadFc(ym){try{const v=localStorage.getItem('cyv_fc_'+ym);return v==null?null:+v;}catch(e){return null;}}
+  const monthColors=['#2b6cb0','#8a5cc0','#2b6cb0'];
+  const paceRows=months.map((ym,i)=>{
+    const ks=Object.keys(B).filter(k=>k.slice(0,7)===ym);
+    let rT=0,vT=0,occS=0,occN=0,dR=0,dV=0,booked=0;
+    ks.forEach(k=>{const b=B[k],a=A[k];rT+=b.r||0;vT+=b.rev||0;if(b.occ!=null){occS+=b.occ;occN++;}if((b.rev||0)>0)booked++;
+      if(a){if(b.r!=null&&a.r!=null)dR+=b.r-a.r;if(b.rev!=null&&a.rev!=null)dV+=b.rev-a.rev;}});
+    const dim=new Date(+ym.slice(0,4),+ym.slice(5),0).getDate();
+    const proj=booked?Math.round(vT/booked*dim/1e4)*1e4:vT;   // smart default forecast (pace projection)
+    const fc=loadFc(ym)!=null?loadFc(ym):proj;
+    const occ=occN?occS/occN:null,gap=fc-vT;
+    const mName=MONTHS[+ym.slice(5)]+' '+ym.slice(0,4);
+    return `<tr>
+      <td class="mn" style="color:${monthColors[i]}">${mName}</td>
+      <td>${occ==null?'—':(occ*100).toFixed(0)+'%'}</td>
+      <td>${num(rT)}</td>
+      <td class="pk">${dR>=0?'+':''}${num(dR)}</td>
+      <td>${rs(vT)}</td>
+      <td class="pk">${dV>=0?'+':'−'}₹${INR.format(Math.abs(Math.round(dV)))}</td>
+      <td><input class="fc-in" type="text" inputmode="numeric" data-ym="${ym}" data-rev="${Math.round(vT)}" value="₹${INR.format(Math.round(fc))}"></td>
+      <td class="gap ${gap>=0?'pos':'neg'}" id="gap-${ym}">${gap>=0?'':'−'}₹${INR.format(Math.abs(Math.round(gap)))}</td>
+    </tr>`;}).join('');
+  const paceHTML=`<div class="snapsec">
+    <div class="snaphdr">📊 3-MONTH PACE SUMMARY<span class="sh-sub">Current month +2 · ${months.map(m=>MONTHS[+m.slice(5)]).join(' → ')} ${PTO.slice(0,4)}</span></div>
+    <div class="pacewrap"><table class="pace"><thead>
+      <tr><th>Month</th><th>Occ %</th><th>Rooms OTB</th><th class="pk">Pickup RNs</th><th>Room Rev</th><th class="pk">Rev Pickup</th><th>Forecast ✎</th><th>Gap to Fcst</th></tr>
+    </thead><tbody>${paceRows}</tbody></table>
+    <div class="fc-hint">✎ Forecast is yours to set — type your own target for any month and the Gap recalculates instantly (saved on this device). Default is a pace projection. Gap = Forecast − Room Rev on the books.</div></div></div>`;
+
   view.innerHTML=`
     <div class="summary"><div class="ic">✦</div><div class="tx">Pick-up — on the books at <b>${labelDate(PTO)}</b> vs <b>${labelDate(PFROM)}</b>, by stay date. <b>On the Books</b> = rooms / ADR / revenue as of ${labelDate(PTO).replace(/^\w+, /,'')}. <b>Pick-up</b> = change since ${labelDate(PFROM).replace(/^\w+, /,'')} (pick-up ADR = the rate the new rooms came in at). <b>ADR Δ</b> = ADR change vs the prior snapshot.</div></div>
+    ${todayHTML}
+    ${paceHTML}
     <div class="pk-legend"><span class="lg-label">Occupancy</span>${OCCBANDS.map(x=>`<span class="lg-item"><i style="background:${x[1]}"></i>${x[2]}</span>`).join('')}</div>
     <div class="pk-grid">${panels||'<div class="err">No overlapping stay dates between the two snapshots.</div>'}</div>`;
+  // wire editable forecast → live gap + persistence
+  view.querySelectorAll('.fc-in').forEach(inp=>{
+    const val=()=>+(inp.value.replace(/[^0-9]/g,''))||0;
+    const recompute=()=>{const rev=+inp.dataset.rev,fc=val(),gap=fc-rev,cell=document.getElementById('gap-'+inp.dataset.ym);
+      if(cell){cell.textContent=(gap>=0?'':'−')+'₹'+INR.format(Math.abs(Math.round(gap)));cell.className='gap '+(gap>=0?'pos':'neg');}
+      try{localStorage.setItem('cyv_fc_'+inp.dataset.ym,String(fc));}catch(e){}};
+    inp.addEventListener('input',recompute);
+    inp.addEventListener('blur',()=>{inp.value='₹'+INR.format(val());});   // re-format with grouping when done typing
+  });
 }
 function renderPickupActuals(){
   const iso=PDATE,n=PWIN,view=document.getElementById('view');
