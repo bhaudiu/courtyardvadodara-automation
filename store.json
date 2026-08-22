@@ -35142,6 +35142,94 @@
 "revenue": 79928.33
 }
 ]
+},
+"2026-08-21": {
+"operating_income": {
+"total_rooms": 121.0,
+"occupied": 92.0,
+"occupancy": 0.7603305785123967,
+"adr": 7937.04,
+"revpar": 5968.626528925621,
+"total_covers": 274.0,
+"apc": 966.9863503649635,
+"room_revenue": 722203.81,
+"fb_revenue": 264954.26,
+"ood_revenue": 87392.56,
+"total_hotel_revenue": 1074550.6300000001
+},
+"fb_details": {
+"total_rnl": 189626.94,
+"banquet_other": 51480.0,
+"ird": 23847.32
+},
+"outlet_details": [
+{
+"name": "812 CE",
+"covers": 90.0,
+"avg_check": 1123.0144444444445,
+"revenue": 101071.3
+},
+{
+"name": "812 Meal Plan",
+"covers": null,
+"avg_check": null,
+"revenue": 39400.0
+},
+{
+"name": "IRD",
+"covers": 26.0,
+"avg_check": 917.2046153846154,
+"revenue": 23847.32
+},
+{
+"name": "Brubon Caf\u00e9",
+"covers": 63.0,
+"avg_check": 406.8290476190476,
+"revenue": 25630.23
+},
+{
+"name": "The Deck (Starbucks)",
+"covers": 30.0,
+"avg_check": 565.2876666666667,
+"revenue": 16958.63
+},
+{
+"name": "Baroda Grill (BGC)",
+"covers": 1.0,
+"avg_check": 875.0,
+"revenue": 875.0
+},
+{
+"name": "Banquet",
+"covers": 47.0,
+"avg_check": 1095.3191489361702,
+"revenue": 51480.0
+},
+{
+"name": "MBOW",
+"covers": 7.0,
+"avg_check": 813.1114285714285,
+"revenue": 5691.78
+}
+],
+"ood": [
+{
+"name": "Spa",
+"revenue": 8750.0
+},
+{
+"name": "Guest Laundry",
+"revenue": 13088.0
+},
+{
+"name": "Wine Shop",
+"revenue": 57550.84
+},
+{
+"name": "Others Misc.",
+"revenue": 8000.0
+}
+]
 }
 }
 }
