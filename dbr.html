@@ -666,7 +666,7 @@ function renderView(iso){
     <div class="kbl"><span><b>Budget:</b> ${k.bud}</span><span><b>LY:</b> ${k.ly}</span></div></div>`).join('')+`</div>`;
 
   // Performance Overview
-  const prows=[['Total Rooms in Hotel','Rooms in Hotel','number','🏨'],['Occupancy (%)','Occupancy (%)','pct','📍'],
+  const prows=[['Occupied Rooms','Rooms Occupied','number','🏨'],['Occupancy (%)','Occupancy (%)','pct','📍'],
     ['ADR','ADR (₹)','cur','📈'],['RevPar','RevPAR (₹)','cur','📊'],['Room Revenue','Room Revenue (₹)','cur','🛏️'],
     ['F&B Revenue','F&B Revenue (₹)','cur','🍽️'],['Total Hotel Revenue','Total Revenue (₹)','cur','💰']];
   const pf=(v,t)=>v==null?'—':t==='pct'?(v*100).toFixed(1)+'%':num(v);
