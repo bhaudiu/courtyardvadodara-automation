@@ -34,6 +34,7 @@ def normalize(day):
             "total_covers": oi["total_covers"], "apc": oi["apc"],
             "room_revenue": oi["room_revenue"], "fb_revenue": oi["fb_revenue"],
             "ood_revenue": oi["ood_revenue"], "total_hotel_revenue": oi["total_hotel_revenue"],
+            "comp_rooms": oi.get("comp_rooms"), "house_use": oi.get("house_use"),
         },
         "fb_details": day["fb_details"],
         "outlet_details": [{"name": o["name"], "covers": o["covers"],
@@ -80,7 +81,8 @@ def _spec(label):
     simple = {"Total Rooms in Hotel": "available", "Total Rooms in Hotel minus OOO Rooms": "available",
               "Occupied Rooms": "occupied", "Total Covers": "covers", "Room Revenue": "room_rev",
               "F&B Revenue": "fb_rev", "OOD Revenue": "ood_rev", "Total Hotel Revenue": "total_rev",
-              "Total RNL": "rnl", "Banquet & Other Than F&B": "banquet_other"}
+              "Total RNL": "rnl", "Banquet & Other Than F&B": "banquet_other",
+              "Comp.": "comp_rooms", "HSG": "house_use"}   # room-night counts (Value, not money)
     if l in simple: return ("sum", simple[l])
     if l == "IRD": return ("sum", "ird_fb")
     if "No. of Cvrs" in l or "No.of Cvrs" in l or l.endswith("Cvrs"):
@@ -98,7 +100,8 @@ def _base(d):
          "room_rev": oi.get("room_revenue") or 0, "fb_rev": oi.get("fb_revenue") or 0,
          "ood_rev": oi.get("ood_revenue") or 0, "total_rev": oi.get("total_hotel_revenue") or 0,
          "covers": oi.get("total_covers") or 0, "rnl": fb.get("total_rnl") or 0,
-         "banquet_other": fb.get("banquet_other") or 0, "ird_fb": fb.get("ird") or 0}
+         "banquet_other": fb.get("banquet_other") or 0, "ird_fb": fb.get("ird") or 0,
+         "comp_rooms": oi.get("comp_rooms") or 0, "house_use": oi.get("house_use") or 0}
     for o in d["outlet_details"]:
         b["orev:" + o["name"]] = o.get("revenue") or 0
         b["ocov:" + o["name"]] = o.get("covers") or 0

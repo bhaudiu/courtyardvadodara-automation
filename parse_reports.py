@@ -89,11 +89,14 @@ def parse_manager_flash(path: str) -> dict:
         d, mo, y = m.groups()
         biz_date = dt.date(2000 + int(y), int(mo), int(d))
 
+    house_use = (day_value("House Use Rooms") or day_value("House Use")
+                 or day_value("House Rooms"))
     return {
         "biz_date": biz_date,
         "total_rooms_available": day_value("Total Rooms in Hotel"),
         "rooms_occupied_net": day_value("Rooms Occupied minus Comp and House Use"),
         "complimentary_rooms": day_value("Complimentary Rooms"),
+        "house_use_rooms": house_use,
         "adr_net": day_value("ADR minus Comp and House"),
         "mf_room_revenue": day_value("Room Revenue"),
         "mf_fb_revenue": day_value("Food And Beverage Revenue"),
@@ -350,6 +353,8 @@ def build_grr_day(mf_path, tb_path, do_path) -> dict:
         "fb_revenue": fb_total,
         "ood_revenue": other_total,
         "total_hotel_revenue": grand_total,
+        "comp_rooms": comp,                       # complimentary room-nights (count)
+        "house_use": mf.get("house_use_rooms"),   # house-use room-nights (count)
     }
     fb_details = {
         "total_rnl": fb_total - fb_block.get("banquet", 0.0) - fb_block.get("ird", 0.0),

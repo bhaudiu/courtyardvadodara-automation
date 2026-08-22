@@ -516,9 +516,10 @@ function detailBlock(day){
 /* ---------- owner report table (latest only) ---------- */
 const fmtR=(v,k)=>{if(v==null)return '—';if(k==='pct')return (v*100).toFixed(1)+'%';if(k==='number')return INR.format(Math.round(v));return '₹'+INR.format(Math.round(v));};
 const vcell=v=>{if(v==null)return '<td class="num">—</td>';const up=v>=0;return `<td class="num var ${up?'up':'down'}">${(up?'+':'')+(v*100).toFixed(0)}%</td>`;};
-// room-stat template rows (Comp rooms / House use / Per Day) — only populate on the
-// anchor day and render as empty dashes everywhere else, so drop them from the report.
-const RPT_SKIP=new Set(['Comp.','HSG','Per Day']);
+// "Comp." (complimentary room-nights) and "HSG" (house-use room-nights) now compute
+// per day as counts (Value, not money). "Per Day" is a monetary daily-average artifact
+// we don't reconstruct, so it stays hidden.
+const RPT_SKIP=new Set(['Per Day']);
 function ownerTable(sections){
   const body=sections.map(s=>{
     let out=`<tr class="sec"><td colspan="12">${s.title}</td></tr>`;
