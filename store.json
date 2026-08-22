@@ -2987,7 +2987,9 @@
 "room_revenue": 567218.04,
 "fb_revenue": 260873.87,
 "ood_revenue": 36089.5,
-"total_hotel_revenue": 864181.41
+"total_hotel_revenue": 864181.41,
+"comp_rooms": 0,
+"house_use": null
 },
 "fb_details": {
 "total_rnl": 237307.62,
@@ -3071,7 +3073,9 @@
 "room_revenue": 514437.24,
 "fb_revenue": 255544.28999999998,
 "ood_revenue": 140070.35,
-"total_hotel_revenue": 910051.8799999999
+"total_hotel_revenue": 910051.8799999999,
+"comp_rooms": 0,
+"house_use": null
 },
 "fb_details": {
 "total_rnl": 171754.78999999998,
@@ -3163,7 +3167,9 @@
 "room_revenue": 1038208.52,
 "fb_revenue": 330817.17,
 "ood_revenue": 70625.6,
-"total_hotel_revenue": 1439651.29
+"total_hotel_revenue": 1439651.29,
+"comp_rooms": 0,
+"house_use": null
 },
 "fb_details": {
 "total_rnl": 156284.75999999998,
@@ -3251,7 +3257,9 @@
 "room_revenue": 616839.09,
 "fb_revenue": 311501.2,
 "ood_revenue": 24686.000000000116,
-"total_hotel_revenue": 953026.29
+"total_hotel_revenue": 953026.29,
+"comp_rooms": 0,
+"house_use": null
 },
 "fb_details": {
 "total_rnl": 246375.45,
@@ -3339,7 +3347,9 @@
 "room_revenue": 1247207.14,
 "fb_revenue": 228082.27,
 "ood_revenue": 136584.86,
-"total_hotel_revenue": 1611874.27
+"total_hotel_revenue": 1611874.27,
+"comp_rooms": 0,
+"house_use": null
 },
 "fb_details": {
 "total_rnl": 138100.65999999997,
@@ -3431,7 +3441,9 @@
 "room_revenue": 1108303.5,
 "fb_revenue": 364725.93,
 "ood_revenue": 98374.91,
-"total_hotel_revenue": 1571404.3399999999
+"total_hotel_revenue": 1571404.3399999999,
+"comp_rooms": 0,
+"house_use": null
 },
 "fb_details": {
 "total_rnl": 161377.61,
@@ -3523,7 +3535,9 @@
 "room_revenue": 920409.75,
 "fb_revenue": 324364.6,
 "ood_revenue": 84307.12,
-"total_hotel_revenue": 1329081.47
+"total_hotel_revenue": 1329081.47,
+"comp_rooms": 1.0,
+"house_use": null
 },
 "fb_details": {
 "total_rnl": 146541.18999999997,
@@ -35147,7 +35161,9 @@
 "room_revenue": 730207.53,
 "fb_revenue": 264954.26,
 "ood_revenue": 79388.84,
-"total_hotel_revenue": 1074550.63
+"total_hotel_revenue": 1074550.63,
+"comp_rooms": 1.0,
+"house_use": null
 },
 "fb_details": {
 "total_rnl": 189626.94,
