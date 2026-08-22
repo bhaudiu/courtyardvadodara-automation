@@ -1048,9 +1048,19 @@ function refreshData(){
     fetch('./hf.json?ts='+Date.now()).then(r=>r.ok?r.json():null).catch(()=>null),
     fetch('./star.json?ts='+Date.now()).then(r=>r.ok?r.json():null).catch(()=>null)
   ]).then(([d,h,s])=>{
-    if(d){DATA=d;const st=document.getElementById('stamp');if(st)st.textContent='Updated '+new Date(d.generated_at).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    if(d){
+      const prevLatest=DATA?DATA.latest_date:null;
+      const wasOnLatest=(PDATE==null||PDATE===prevLatest);
+      DATA=d;
+      // jump the DBR date to the newest day when we were already on the latest (or the day vanished)
+      if(wasOnLatest||!DATA.days[PDATE])PDATE=d.latest_date;
+      const st=document.getElementById('stamp');if(st)st.textContent='Updated '+new Date(d.generated_at).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
       const dc=document.getElementById('daycount');if(dc)dc.textContent=Object.keys(d.days).length+' days available';}
-    if(h&&h.snaps&&h.dates&&h.dates.length){HF=h;if(!HF.dates.includes(PTO)){HFSNAP=h.latest;PTO=h.latest;PDAYS=1;PFROM=snapFrom(PTO,PDAYS);}}
+    if(h&&h.snaps&&h.dates&&h.dates.length){
+      HF=h;
+      // Refresh means "show the newest": always advance H&F + Pick-up to the latest snapshot.
+      HFSNAP=h.latest;PTO=h.latest;PDAYS=Math.max(1,PDAYS||1);PFROM=snapFrom(PTO,PDAYS);
+    }
     if(s){STAR=s;}
     selectTab(TAB);
     done();
