@@ -38,6 +38,8 @@ MONTHS = {"Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
 
 # Comp sheet monthly-trend rows (My Property / Comp Set / Index) per metric.
 TREND_ROWS = {"occ": (21, 22, 23), "adr": (33, 34, 35), "revpar": (45, 46, 47)}
+# YoY "% Chg" rows (My Property / Comp Set / Index) per metric.
+TREND_CHG_ROWS = {"occ": (26, 27, 28), "adr": (38, 39, 40), "revpar": (50, 51, 52)}
 
 
 def parse_comp_trend(wb):
@@ -66,7 +68,9 @@ def parse_comp_trend(wb):
 
     out = {"months": months}
     for key, (mp, cs, idx) in TREND_ROWS.items():
-        out[key] = {"mp": series(mp), "cs": series(cs), "idx": series(idx)}
+        cmp_r, ccs_r, cidx_r = TREND_CHG_ROWS[key]
+        out[key] = {"mp": series(mp), "cs": series(cs), "idx": series(idx),
+                    "mp_chg": series(cmp_r), "cs_chg": series(ccs_r), "idx_chg": series(cidx_r)}
     return out
 
 

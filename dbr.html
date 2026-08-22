@@ -1020,7 +1020,7 @@ function renderPickupActuals(){
 }
 
 let PDATE=null,PWIN=1,TAB='dbr',HF=null,HFSNAP=null,PSNAP=null,PFROM=null,PTO=null,PMETRIC='rooms',PDAYS=1,STAR=null,STRSUB='monthly';
-let STRTM='occ',STRTR=12;   // market-trend chart: metric + range (months)
+let STRTM='occ',STRTR=12,STRVIEW='val';   // market-trend chart: metric, range (months), view (val|chg)
 const winSelHTML=`<select id="pwin"><option value="1">1 night</option><option value="2">2 nights</option><option value="3">3 nights</option><option value="7">7 nights</option></select>`;
 const snapOptsHTML=()=>HF.dates.slice().reverse().map(d=>`<option value="${d}">${labelDate(d)}</option>`).join('');
 function setControls(){
@@ -1130,23 +1130,36 @@ const STRTMETRICS={
   revpar:{label:'RevPAR',fmt:v=>v==null?'—':'₹'+INR.format(Math.round(v)),tick:v=>'₹'+(v/1000).toFixed(1)+'k',idx:'RGI'},
 };
 function strMonLabel(ym){return MONTHS[+ym.slice(5)]+" '"+ym.slice(2,4);}
+function strSeries(tr,n){
+  const chg=STRVIEW==='chg';
+  return {chg,
+    months:tr.months.slice(-n),
+    mp:(chg?tr[STRTM].mp_chg:tr[STRTM].mp).slice(-n),
+    cs:(chg?tr[STRTM].cs_chg:tr[STRTM].cs).slice(-n),
+    idx:tr[STRTM].idx.slice(-n)};
+}
 function strTrendCard(tr){
   const m=STRTMETRICS[STRTM];
   const n=Math.min(STRTR,tr.months.length);
-  const months=tr.months.slice(-n),mp=tr[STRTM].mp.slice(-n),cs=tr[STRTM].cs.slice(-n),idx=tr[STRTM].idx.slice(-n);
+  const {chg,months,mp,cs,idx}=strSeries(tr,n);
+  const fmt=chg?(v=>v==null?'—':(v>=0?'+':'')+v.toFixed(1)+'%'):m.fmt;
+  const tick=chg?(v=>(v>=0?'+':'')+v.toFixed(0)+'%'):m.tick;
   const W=680,H=250,pl=52,pr=16,pt=16,pb=40;
   const all=[...mp,...cs].filter(v=>v!=null);
-  const ymax=(Math.max(...all)*1.10)||1;
+  let ymin,ymax;
+  if(chg){const lo=Math.min(...all,0),hi=Math.max(...all,0),pad=(hi-lo)*0.12||1;ymin=lo-pad;ymax=hi+pad;}
+  else{ymin=0;ymax=(Math.max(...all)*1.10)||1;}
   const x=i=>pl+(months.length<2?0:i/(months.length-1)*(W-pl-pr));
-  const y=v=>pt+(1-v/ymax)*(H-pt-pb);
+  const y=v=>pt+(1-(v-ymin)/(ymax-ymin))*(H-pt-pb);
   const path=arr=>{let d='',pen=false;arr.forEach((v,i)=>{if(v==null){pen=false;return;}d+=(pen?'L':'M')+x(i).toFixed(1)+','+y(v).toFixed(1)+' ';pen=true;});return d.trim();};
-  let grid='';for(let gI=0;gI<=4;gI++){const gv=ymax*gI/4,gy=y(gv);grid+=`<line x1="${pl}" y1="${gy.toFixed(1)}" x2="${W-pr}" y2="${gy.toFixed(1)}" stroke="#dbe1e9"/><text x="${pl-7}" y="${(gy+4).toFixed(1)}" text-anchor="end" fill="var(--faint)" font-size="10">${m.tick(gv)}</text>`;}
+  let grid='';for(let gI=0;gI<=4;gI++){const gv=ymin+(ymax-ymin)*gI/4,gy=y(gv);grid+=`<line x1="${pl}" y1="${gy.toFixed(1)}" x2="${W-pr}" y2="${gy.toFixed(1)}" stroke="#dbe1e9"/><text x="${pl-7}" y="${(gy+4).toFixed(1)}" text-anchor="end" fill="var(--faint)" font-size="10">${tick(gv)}</text>`;}
+  const zero=(chg&&ymin<0&&ymax>0)?`<line x1="${pl}" y1="${y(0).toFixed(1)}" x2="${W-pr}" y2="${y(0).toFixed(1)}" stroke="#9aa6b8" stroke-width="1.3"/>`:'';
   const step=Math.max(1,Math.ceil(months.length/12));
   let xl='';months.forEach((ym,i)=>{if(i%step===0||i===months.length-1)xl+=`<text x="${x(i).toFixed(1)}" y="${H-8}" text-anchor="middle" fill="var(--faint)" font-size="9.5">${strMonLabel(ym)}</text>`;});
   const dots=(arr,col)=>arr.map((v,i)=>v==null?'':`<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="2.4" fill="#fff" stroke="${col}" stroke-width="1.6"/>`).join('');
   const hit=months.map((ym,i)=>`<rect x="${(x(i)-(W-pl-pr)/months.length/2).toFixed(1)}" y="${pt}" width="${((W-pl-pr)/months.length).toFixed(1)}" height="${H-pt-pb}" fill="transparent" class="shit" data-i="${i}"/>`).join('');
   const CMP='#b0143c',CCS='#4f9fd0';
-  const svg=`<svg viewBox="0 0 ${W} ${H}">${grid}
+  const svg=`<svg viewBox="0 0 ${W} ${H}">${grid}${zero}
     <path d="${path(cs)}" fill="none" stroke="${CCS}" stroke-width="2.1"/>
     <path d="${path(mp)}" fill="none" stroke="${CMP}" stroke-width="2.6"/>
     ${dots(cs,CCS)}${dots(mp,CMP)}
@@ -1155,26 +1168,31 @@ function strTrendCard(tr){
   const mbtns=Object.keys(STRTMETRICS).map(k=>`<button class="cbtn${k===STRTM?' on':''}" data-sm="${k}">${STRTMETRICS[k].label}</button>`).join('');
   const rmax=tr.months.length;
   const rbtns=[[6,'6M'],[12,'12M'],[rmax,'All']].map(([v,l])=>`<button class="cbtn${STRTR===v?' on':''}" data-sr="${v}">${l}</button>`).join('');
+  const vbtns=[['val','Values'],['chg','Growth vs LY']].map(([v,l])=>`<button class="cbtn${STRVIEW===v?' on':''}" data-sv="${v}">${l}</button>`).join('');
   const lastIdx=idx[idx.length-1];
-  return `<div class="ncard" style="margin-top:18px"><div class="chhead"><h3>Market Trend — ${m.label} · My Property vs Comp Set</h3><div class="cbtns">${mbtns}</div></div>
-    <div class="chhead" style="margin:0 0 12px"><span class="note" style="font-weight:600">Range</span><div class="cbtns">${rbtns}</div>
-      <span class="note">Latest ${m.idx}: <b style="color:${lastIdx>=100?'var(--good)':'var(--bad)'}">${lastIdx==null?'—':lastIdx.toFixed(1)}</b> (100 = parity)</span></div>
+  const mpChgLast=(tr[STRTM].mp_chg||[]).slice(-1)[0],csChgLast=(tr[STRTM].cs_chg||[]).slice(-1)[0];
+  return `<div class="ncard" style="margin-top:18px"><div class="chhead"><h3>Market Trend — ${m.label}${chg?' · Growth vs Last Year':' · My Property vs Comp Set'}</h3><div class="cbtns">${mbtns}</div></div>
+    <div class="chhead" style="margin:0 0 6px"><div class="cbtns">${vbtns}</div><span class="note" style="font-weight:600;margin-left:6px">Range</span><div class="cbtns">${rbtns}</div>
+      <span class="note">${chg?`Latest YoY: <b style="color:${mpChgLast>=0?'var(--good)':'var(--bad)'}">${mpChgLast==null?'—':(mpChgLast>=0?'+':'')+mpChgLast.toFixed(1)+'%'}</b> vs comp ${csChgLast==null?'—':(csChgLast>=0?'+':'')+csChgLast.toFixed(1)+'%'}`:`Latest ${m.idx}: <b style="color:${lastIdx>=100?'var(--good)':'var(--bad)'}">${lastIdx==null?'—':lastIdx.toFixed(1)}</b> (100 = parity)`}</span></div>
     <div class="chartwrap" id="scw" style="padding:0 4px">${svg}<div class="tt" id="stt"></div></div>
-    <div class="chleg"><span style="color:${CMP}"><i></i>My Property</span><span style="color:${CCS}"><i></i>Competitive Set</span></div></div>`;
+    <div class="chleg"><span style="color:${CMP}"><i></i>My Property</span><span style="color:${CCS}"><i></i>Competitive Set</span>${chg?'<span class="note">YoY % change vs same month last year</span>':''}</div></div>`;
 }
 function wireStrTrend(tr){
   document.querySelectorAll('#view .cbtn[data-sm]').forEach(b=>b.onclick=()=>{STRTM=b.dataset.sm;renderSTR();});
   document.querySelectorAll('#view .cbtn[data-sr]').forEach(b=>b.onclick=()=>{STRTR=+b.dataset.sr;renderSTR();});
+  document.querySelectorAll('#view .cbtn[data-sv]').forEach(b=>b.onclick=()=>{STRVIEW=b.dataset.sv;renderSTR();});
   const cw=document.getElementById('scw');if(!cw||!tr)return;
   const m=STRTMETRICS[STRTM],n=Math.min(STRTR,tr.months.length);
-  const months=tr.months.slice(-n),mp=tr[STRTM].mp.slice(-n),cs=tr[STRTM].cs.slice(-n),idx=tr[STRTM].idx.slice(-n);
+  const {chg,months,mp,cs,idx}=strSeries(tr,n);
+  const fmt=chg?(v=>v==null?'—':(v>=0?'+':'')+v.toFixed(1)+'%'):m.fmt;
   const svg=cw.querySelector('svg'),tt=document.getElementById('stt'),cr=svg.querySelector('#scr'),vb=svg.viewBox.baseVal;
   const W=680,pl=52,pr=16;const x=i=>pl+(months.length<2?0:i/(months.length-1)*(W-pl-pr));
   cw.querySelectorAll('.shit').forEach(h=>h.addEventListener('mouseenter',()=>{
     const i=+h.dataset.i,px=x(i),rect=cw.getBoundingClientRect();
     cr.setAttribute('x1',px);cr.setAttribute('x2',px);cr.setAttribute('opacity','1');
     tt.style.left=(px/vb.width*rect.width)+'px';tt.style.top='16px';tt.style.opacity='1';
-    tt.innerHTML=`${strMonLabel(months[i])} · <b style="color:#b0143c">${m.fmt(mp[i])}</b><br><span style="color:#4f9fd0">Comp ${m.fmt(cs[i])}</span><br><span style="color:${idx[i]>=100?'var(--good)':'var(--bad)'}">${m.idx} ${idx[i]==null?'—':idx[i].toFixed(1)}</span>`;
+    tt.innerHTML=`${strMonLabel(months[i])} · <b style="color:#b0143c">${fmt(mp[i])}</b><br><span style="color:#4f9fd0">Comp ${fmt(cs[i])}</span>`
+      +(chg?'':`<br><span style="color:${idx[i]>=100?'var(--good)':'var(--bad)'}">${m.idx} ${idx[i]==null?'—':idx[i].toFixed(1)}</span>`);
   }));
   cw.addEventListener('mouseleave',()=>{tt.style.opacity='0';cr.setAttribute('opacity','0');});
 }
