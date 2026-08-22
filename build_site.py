@@ -177,7 +177,8 @@ def build_report_for(iso, days, anchor_iso, anchor_sections):
     mfp = days.get(iso, {}).get("mf_periods")
     if mfp:
         LMAP = {"Room Revenue": "room", "F&B Revenue": "fb",
-                "OOD Revenue": "ood", "Total Hotel Revenue": "total"}
+                "OOD Revenue": "ood", "Total Hotel Revenue": "total",
+                "Occupied Rooms": "occupied"}
         for s in out:
             for r in s["rows"]:
                 key = LMAP.get(r["label"].strip())

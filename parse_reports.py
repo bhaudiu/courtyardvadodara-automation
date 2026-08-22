@@ -123,6 +123,8 @@ def parse_manager_flash(path: str) -> dict:
             "fb": dmy("Food And Beverage Revenue"),
             "ood": dmy("Other Revenue"),
             "total": dmy("Total Revenue"),
+            # occupied-room count MTD/YTD straight from Manager Flash MONTH/YEAR
+            "occupied": dmy("Rooms Occupied minus Comp and House Use"),
         },
     }
 
