@@ -35570,6 +35570,142 @@
 "ly_ytd": 22092.0
 }
 }
+},
+"2026-08-23": {
+"operating_income": {
+"total_rooms": 121.0,
+"occupied": 107.0,
+"occupancy": 0.8842975206611571,
+"adr": 8359.25,
+"revpar": 7392.0654545454545,
+"total_covers": 390.0,
+"apc": 781.4329743589743,
+"room_revenue": 894439.92,
+"fb_revenue": 304758.86,
+"ood_revenue": -107063.0400000001,
+"total_hotel_revenue": 1092135.7399999998,
+"comp_rooms": 2.0,
+"house_use": null
+},
+"fb_details": {
+"total_rnl": 189954.78999999998,
+"banquet_other": 80625.0,
+"ird": 34179.07
+},
+"outlet_details": [
+{
+"name": "812 CE",
+"covers": 73.0,
+"avg_check": 1371.8383561643834,
+"revenue": 100144.2
+},
+{
+"name": "812 Meal Plan",
+"covers": null,
+"avg_check": null,
+"revenue": 34500.0
+},
+{
+"name": "IRD",
+"covers": 42.0,
+"avg_check": 813.787380952381,
+"revenue": 34179.07
+},
+{
+"name": "Brubon Caf\u00e9",
+"covers": 106.0,
+"avg_check": 291.3416037735849,
+"revenue": 30882.21
+},
+{
+"name": "The Deck (Starbucks)",
+"covers": 30.0,
+"avg_check": 373.8353333333333,
+"revenue": 11215.06
+},
+{
+"name": "Baroda Grill (BGC)",
+"covers": 22.0,
+"avg_check": 244.21136363636361,
+"revenue": 5372.65
+},
+{
+"name": "Banquet",
+"covers": 102.0,
+"avg_check": 790.4411764705883,
+"revenue": 80625.0
+},
+{
+"name": "MBOW",
+"covers": 3.0,
+"avg_check": 2613.556666666667,
+"revenue": 7840.67
+}
+],
+"ood": [
+{
+"name": "Spa",
+"revenue": 17500.0
+},
+{
+"name": "Transportation",
+"revenue": 1000.0
+},
+{
+"name": "Guest Laundry",
+"revenue": 10003.5
+},
+{
+"name": "Wine Shop",
+"revenue": 54805.97
+},
+{
+"name": "Others Misc.",
+"revenue": -190372.5100000001
+}
+],
+"mf_periods": {
+"room": {
+"day": 894439.92,
+"mtd": 19501009.64,
+"ytd": 221261633.71,
+"ly_day": 374702.28,
+"ly_mtd": 13350767.57,
+"ly_ytd": 185194636.43
+},
+"fb": {
+"day": 407840.53,
+"mtd": 8087160.88,
+"ytd": 89227348.63,
+"ly_day": 211062.16,
+"ly_mtd": 7818084.26,
+"ly_ytd": 89259785.45
+},
+"ood": {
+"day": 79734.14,
+"mtd": 2563336.16,
+"ytd": 27804299.95,
+"ly_day": 41782.57,
+"ly_mtd": 1365751.87,
+"ly_ytd": 14732320.9
+},
+"total": {
+"day": 1382014.59,
+"mtd": 30151506.68,
+"ytd": 338293282.29,
+"ly_day": 627547.01,
+"ly_mtd": 22534603.7,
+"ly_ytd": 289186742.78
+},
+"occupied": {
+"day": 107.0,
+"mtd": 2277.0,
+"ytd": 23636.0,
+"ly_day": 55.0,
+"ly_mtd": 1905.0,
+"ly_ytd": 22232.0
+}
+}
 }
 }
 }
