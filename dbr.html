@@ -1240,32 +1240,77 @@ function renderSTR(){
   document.querySelectorAll('#view .cbtn[data-str]').forEach(b=>b.onclick=()=>{STRSUB=b.dataset.str;renderSTR();});
   if(g&&g.trend)wireStrTrend(g.trend);
 }
-function refreshData(){
-  const btn=document.getElementById('refreshBtn');
-  if(btn){btn.classList.add('spin');btn.disabled=true;}
-  const done=()=>{if(btn){btn.classList.remove('spin');btn.disabled=false;}};
-  Promise.all([
+function applyData(d,h,s){
+  if(d){
+    const prevLatest=DATA?DATA.latest_date:null;
+    const wasOnLatest=(PDATE==null||PDATE===prevLatest);
+    DATA=d;
+    // jump the DBR date to the newest day when we were already on the latest (or the day vanished)
+    if(wasOnLatest||!DATA.days[PDATE])PDATE=d.latest_date;
+    const st=document.getElementById('stamp');if(st)st.textContent='Updated '+new Date(d.generated_at).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const dc=document.getElementById('daycount');if(dc)dc.textContent=Object.keys(d.days).length+' days available';}
+  if(h&&h.snaps&&h.dates&&h.dates.length){
+    HF=h;
+    // Refresh means "show the newest": always advance H&F + Pick-up to the latest snapshot.
+    HFSNAP=h.latest;PTO=h.latest;PDAYS=Math.max(1,PDAYS||1);PFROM=snapFrom(PTO,PDAYS);
+  }
+  if(s){STAR=s;}
+  selectTab(TAB);
+}
+function reloadDataOnly(){
+  return Promise.all([
     fetch('./data.json?ts='+Date.now()).then(r=>r.ok?r.json():null).catch(()=>null),
     fetch('./hf.json?ts='+Date.now()).then(r=>r.ok?r.json():null).catch(()=>null),
     fetch('./star.json?ts='+Date.now()).then(r=>r.ok?r.json():null).catch(()=>null)
-  ]).then(([d,h,s])=>{
-    if(d){
-      const prevLatest=DATA?DATA.latest_date:null;
-      const wasOnLatest=(PDATE==null||PDATE===prevLatest);
-      DATA=d;
-      // jump the DBR date to the newest day when we were already on the latest (or the day vanished)
-      if(wasOnLatest||!DATA.days[PDATE])PDATE=d.latest_date;
-      const st=document.getElementById('stamp');if(st)st.textContent='Updated '+new Date(d.generated_at).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-      const dc=document.getElementById('daycount');if(dc)dc.textContent=Object.keys(d.days).length+' days available';}
-    if(h&&h.snaps&&h.dates&&h.dates.length){
-      HF=h;
-      // Refresh means "show the newest": always advance H&F + Pick-up to the latest snapshot.
-      HFSNAP=h.latest;PTO=h.latest;PDAYS=Math.max(1,PDAYS||1);PFROM=snapFrom(PTO,PDAYS);
+  ]).then(([d,h,s])=>applyData(d,h,s));
+}
+function cyvToast(msg){
+  let t=document.getElementById('cyvToast');
+  if(!t){t=document.createElement('div');t.id='cyvToast';
+    t.style.cssText='position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#16233b;color:#fff;padding:11px 18px;border-radius:10px;font:600 13px/1.35 -apple-system,Segoe UI,Roboto,sans-serif;box-shadow:0 6px 22px rgba(0,0,0,.28);z-index:100000;max-width:82vw;text-align:center';
+    document.body.appendChild(t);}
+  t.textContent=msg;t.style.transition='';t.style.opacity='1';
+  clearTimeout(t._h);t._h=setTimeout(()=>{t.style.transition='opacity .5s';t.style.opacity='0';},4600);
+}
+function setRefreshLabel(txt,spin){
+  const btn=document.getElementById('refreshBtn');if(!btn)return;
+  btn.innerHTML='<span class="ic'+(spin?' spin':'')+'">↻</span> '+txt;
+}
+// Refresh = ask the server to fetch new email now, then wait for the fresh build.
+function refreshData(){
+  const btn=document.getElementById('refreshBtn');
+  if(btn){btn.classList.add('spin');btn.disabled=true;}
+  const finish=(msg)=>{if(btn){btn.classList.remove('spin');btn.disabled=false;}setRefreshLabel('Refresh',false);if(msg)cyvToast(msg);};
+  const prevGen=DATA?DATA.generated_at:null;
+  setRefreshLabel('Fetching…',true);
+  fetch('/api/refresh',{method:'POST',headers:{'Content-Type':'application/json'}})
+    .then(r=>r.json().catch(()=>({ok:false,status:r.status})))
+    .then(res=>{
+      if(res&&res.ok){
+        cyvToast('Fetching the latest reports from email…');
+        pollForBuild(prevGen,0,finish);
+      }else{
+        // trigger endpoint not set up yet — just reload whatever is already built
+        reloadDataOnly().then(()=>finish('Showing the latest available data.'));
+      }
+    })
+    .catch(()=>reloadDataOnly().then(()=>finish('Showing the latest available data.')));
+}
+function pollForBuild(prevGen,tries,finish){
+  const MAX=26; // ~3.5 min at 8s intervals
+  setRefreshLabel('Fetching… '+(tries*8)+'s',true);
+  fetch('./data.json?ts='+Date.now()).then(r=>r.ok?r.json():null).catch(()=>null).then(d=>{
+    if(d&&d.generated_at&&d.generated_at!==prevGen){
+      Promise.all([
+        Promise.resolve(d),
+        fetch('./hf.json?ts='+Date.now()).then(r=>r.ok?r.json():null).catch(()=>null),
+        fetch('./star.json?ts='+Date.now()).then(r=>r.ok?r.json():null).catch(()=>null)
+      ]).then(([dd,h,s])=>{applyData(dd,h,s);finish('Updated with the latest reports.');});
+      return;
     }
-    if(s){STAR=s;}
-    selectTab(TAB);
-    done();
-  }).catch(done);
+    if(tries>=MAX){reloadDataOnly().then(()=>finish('Still building — showing the latest available. Try Refresh again shortly.'));return;}
+    setTimeout(()=>pollForBuild(prevGen,tries+1,finish),8000);
+  });
 }
 const NAVITEMS=[['dbr','📊','Daily Business Report'],['hf','📕','History &amp; Forecast'],['pickup','📅','Pickup &amp; Pace'],['str','📈','Market (STR)']];
 function render(d){
