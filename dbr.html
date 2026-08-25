@@ -302,7 +302,7 @@
   .snaptile .st-v{font-size:25px;font-weight:800;margin-top:5px;letter-spacing:-.5px}
   .snaptile .st-s{font-size:11px;color:var(--faint);margin-top:2px}
   .pacewrap{border:1px solid var(--line);border-top:none;border-radius:0 0 11px 11px;overflow-x:auto;background:var(--card)}
-  table.pace{width:100%;border-collapse:collapse;font-size:12.5px;min-width:820px}
+  table.pace{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1000px}
   table.pace th,table.pace td{padding:10px 13px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--line-soft)}
   table.pace thead th{background:#eaf0f4;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:#3a5567;font-weight:700}
   table.pace tbody td{font-variant-numeric:tabular-nums}
@@ -955,21 +955,25 @@ function renderPickup(){
     const proj=booked?Math.round(vT/booked*dim/1e4)*1e4:vT;   // smart default forecast (pace projection)
     const fc=loadFc(ym)!=null?loadFc(ym):proj;
     const occ=occN?occS/occN:null,gap=fc-vT;
+    const adrOtb=rT?vT/rT:null;      // ADR on the books = room rev / rooms OTB
+    const adrPk=dR?dV/dR:null;       // pick-up ADR = rate the picked-up rooms came in at
     const mName=MONTHS[+ym.slice(5)]+' '+ym.slice(0,4);
     return `<tr>
       <td class="mn" style="color:${monthColors[i]}">${mName}</td>
       <td>${occ==null?'—':(occ*100).toFixed(0)+'%'}</td>
       <td>${num(rT)}</td>
-      <td class="pk">${dR>=0?'+':''}${num(dR)}</td>
       <td>${rs(vT)}</td>
+      <td>${adrOtb==null?'—':rs(adrOtb)}</td>
+      <td class="pk">${dR>=0?'+':''}${num(dR)}</td>
       <td class="pk">${dV>=0?'+':'−'}₹${INR.format(Math.abs(Math.round(dV)))}</td>
+      <td class="pk">${adrPk==null?'—':rs(adrPk)}</td>
       <td><input class="fc-in" type="text" inputmode="numeric" data-ym="${ym}" data-rev="${Math.round(vT)}" value="₹${INR.format(Math.round(fc))}"></td>
       <td class="gap ${gap>=0?'pos':'neg'}" id="gap-${ym}">${gap>=0?'':'−'}₹${INR.format(Math.abs(Math.round(gap)))}</td>
     </tr>`;}).join('');
   const paceHTML=`<div class="snapsec">
     <div class="snaphdr">📊 3-MONTH PACE SUMMARY<span class="sh-sub">Current month +2 · ${months.map(m=>MONTHS[+m.slice(5)]).join(' → ')} ${PTO.slice(0,4)}</span></div>
     <div class="pacewrap"><table class="pace"><thead>
-      <tr><th>Month</th><th>Occ %</th><th>Rooms OTB</th><th class="pk">Pickup RNs</th><th>Room Rev</th><th class="pk">Rev Pickup</th><th>Forecast ✎</th><th>Gap to Fcst</th></tr>
+      <tr><th>Month</th><th>Occ %</th><th>Rooms OTB</th><th>Room Rev</th><th>ADR OTB</th><th class="pk">Pickup RNs</th><th class="pk">Rev Pickup</th><th class="pk">ADR Pickup</th><th>Forecast ✎</th><th>Gap to Fcst</th></tr>
     </thead><tbody>${paceRows}</tbody></table>
     <div class="fc-hint">✎ Forecast is yours to set — type your own target for any month and the Gap recalculates instantly (saved on this device). Default is a pace projection. Gap = Forecast − Room Rev on the books.</div></div></div>`;
 
