@@ -313,6 +313,7 @@
   table.pace .fc-in:focus{outline:2px solid var(--accent);border-color:var(--accent)}
   table.pace td.gap.pos{color:var(--bad);font-weight:700}
   table.pace td.gap.neg{color:var(--good);font-weight:700}
+  table.pace td.pk.neg{color:var(--bad);font-weight:700}
   .fc-hint{font-size:11px;color:var(--faint);padding:9px 13px;display:flex;align-items:center;gap:6px}
 
   @media print{
@@ -963,9 +964,9 @@ function renderPickup(){
       <td>${num(rT)}</td>
       <td>${rs(vT)}</td>
       <td>${adrOtb==null?'—':rs(adrOtb)}</td>
-      <td class="pk">${dR>=0?'+':''}${num(dR)}</td>
-      <td class="pk">${dV>=0?'+':'−'}₹${INR.format(Math.abs(Math.round(dV)))}</td>
-      <td class="pk">${adrPk==null?'—':rs(adrPk)}</td>
+      <td class="pk${dR<0?' neg':''}">${dR>=0?'+':''}${num(dR)}</td>
+      <td class="pk${dV<0?' neg':''}">${dV>=0?'+':'−'}₹${INR.format(Math.abs(Math.round(dV)))}</td>
+      <td class="pk${adrPk!=null&&adrPk<0?' neg':''}">${adrPk==null?'—':rs(adrPk)}</td>
       <td><input class="fc-in" type="text" inputmode="numeric" data-ym="${ym}" data-rev="${Math.round(vT)}" value="₹${INR.format(Math.round(fc))}"></td>
       <td class="gap ${gap>=0?'pos':'neg'}" id="gap-${ym}">${gap>=0?'':'−'}₹${INR.format(Math.abs(Math.round(gap)))}</td>
     </tr>`;}).join('');
