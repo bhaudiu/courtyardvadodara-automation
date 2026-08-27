@@ -1,42 +1,50 @@
-name: Refresh Courtyard DBR
+name: Build and Deploy
+
 on:
-  workflow_dispatch:
   push:
-    paths: ["*.py", "requirements.txt", "dbr.html", "index.html", ".github/workflows/deploy.yml"]
-  schedule:
-    - cron: "0 * * * *"   # every hour — catches the reports whenever they arrive (24h), not a fixed time
+    branches:
+      - main
+
 permissions:
-  contents: write
-concurrency:
-  group: cyv-dbr
-  cancel-in-progress: false
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - run: pip install -r requirements.txt
-      - name: Fetch daily reports from Gmail (IMAP)
-        run: python3 fetch_email.py
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Fetch email reports
         env:
           IMAP_HOST: ${{ secrets.IMAP_HOST }}
           IMAP_USER: ${{ secrets.IMAP_USER }}
           IMAP_PASS: ${{ secrets.IMAP_PASS }}
-      - name: Build dashboard data
-        run: python3 build_site.py
-      - name: Commit updated data (Cloudflare Pages auto-deploys)
+          IMAP_LOOKBACK: ${{ vars.IMAP_LOOKBACK || '150' }}
         run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git add data.json store.json
-          if git diff --cached --quiet; then
-            echo "No data change."
-          else
-            git commit -m "Update DBR data"
-            git pull --rebase --autostash origin main || true
-            git push || echo "Push skipped; will sync next run."
-          fi
+          python fetch_email.py
+
+      - name: Build site
+        run: |
+          python build_site.py
+
+      - name: Upload generated site
+        uses: actions/upload-artifact@v5
+        with:
+          name: generated-site
+          path: site/
