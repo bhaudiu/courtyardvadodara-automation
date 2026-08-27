@@ -1,21 +1,5 @@
 #!/usr/bin/env python3
-"""fetch_email.py — download every daily report set + H&F snapshots + STAR from the mailbox.
 
-Three kinds of mail are harvested into inbox/ for build_site.py:
-
-1. DBR set — an email carrying all 3 reports (Manager Flash, Trial Balance,
-   Daily Operations) becomes inbox/set_NNNN/ . One run can backfill many days.
-
-2. H&F snapshot — an email carrying R106 "History and Forecast" PDFs (one per
-   forward month) becomes inbox/hnf_NNNN/ . build_site keys each snapshot by the
-   RUN date printed on the PDF, so numbering here is irrelevant.
-
-3. STAR / STR — a Monthly (or Weekly) STAR "Glance" workbook is saved as
-   inbox/star_monthly.xlsx / inbox/star_weekly.xlsx (newest kept).
-
-GitHub secrets: IMAP_HOST (default imap.gmail.com), IMAP_USER, IMAP_PASS (app password).
-Optional: IMAP_LOOKBACK (recent emails to scan, default 150).
-"""
 import imaplib
 import email
 import os
@@ -24,82 +8,197 @@ import shutil
 HOST = os.environ.get("IMAP_HOST", "imap.gmail.com")
 USER = os.environ["IMAP_USER"]
 PASS = os.environ["IMAP_PASS"]
-LOOKBACK = int(os.environ.get("IMAP_LOOKBACK", "150"))
-INBOX = "inbox"
 
-# output filename -> (keywords matched in attachment name, allowed extensions)
+INBOX_DIR = "inbox"
+DAYS_BACK = int(os.environ.get("IMAP_DAYS_BACK", "60"))
+
 TARGETS = {
-    "manager_flash.pdf":     (("manager", "flash", "e106"), (".pdf",)),
-    "trial_balance.pdf":     (("trial", "balance", "e100"), (".pdf",)),
-    "daily_operations.xlsx": (("daily operation", "daily_operation", "operations", "operation", "simphony"), (".xlsx", ".xls")),
+    "manager_flash.pdf": (
+        ("manager", "flash", "e106"),
+        (".pdf",)
+    ),
+    "trial_balance.pdf": (
+        ("trial", "balance", "e100"),
+        (".pdf",)
+    ),
+    "daily_operations.xlsx": (
+        ("daily operation", "daily_operation", "operations", "operation", "simphony"),
+        (".xlsx", ".xls")
+    ),
 }
 
 
-def _is_hnf(low):
-    return low.endswith(".pdf") and ("hnf" in low or "history and forecast" in low or "history & forecast" in low)
+def is_hnf(filename):
+    filename = filename.lower()
+    return (
+        filename.endswith(".pdf")
+        and (
+            "hnf" in filename
+            or "history and forecast" in filename
+            or "history & forecast" in filename
+        )
+    )
 
 
-def _is_star(low):
-    return low.endswith((".xlsx", ".xls")) and "star" in low
+def is_star(filename):
+    filename = filename.lower()
+    return filename.endswith((".xlsx", ".xls")) and "star" in filename
 
 
-def run():
-    if os.path.isdir(INBOX):
-        shutil.rmtree(INBOX)
-    os.makedirs(INBOX, exist_ok=True)
+def search_relevant_messages(mail):
+    searches = [
+        f'newer_than:{DAYS_BACK}d has:attachment'
+    ]
 
-    M = imaplib.IMAP4_SSL(HOST)
-    M.login(USER, PASS)
-    M.select("INBOX")
-    _, data = M.search(None, "ALL")
-    ids = data[0].split()[-LOOKBACK:]
-    sets = hnf_snaps = 0
-    star_saved = {"monthly": False, "weekly": False}   # first hit = newest, kept
-    for n, i in enumerate(reversed(ids)):  # newest first
-        _, md = M.fetch(i, "(RFC822)")
-        msg = email.message_from_bytes(md[0][1])
-        found = {}       # DBR set for this email
-        hnf_parts = []   # (filename, payload) of every H&F pdf in this email
+    msg_ids = set()
+
+    for query in searches:
+        status, data = mail.search(
+            None,
+            "X-GM-RAW",
+            f'"{query}"'
+        )
+
+        if status == "OK" and data and data[0]:
+            msg_ids.update(data[0].split())
+
+    return sorted(msg_ids, key=int   if os.path.isdir(INBOX_DIR):
+        shutil.rmtree(INBOX_DIR)
+
+    os.makedirs(INBOX_DIR, exist_ok=True)
+
+    mail = imaplib.IMAP4_SSL(HOST)
+    mail.login(USER, PASS)
+    mail.select("INBOX")
+
+    ids = search_relevant_messages(mail)
+
+    print(f"Found {len(ids)} candidate emails")
+
+    sets = 0
+    hnf_snaps = 0
+
+    star_saved = {
+        "monthly": False,
+        "weekly": False,
+    }
+
+    for idx, msg_id in enumerate(reversed(ids)):
+
+        status, msg_data = mail.fetch(msg_id, "(RFC822)")
+        if status != "OK":
+            continue
+
+        try:
+            msg = email.message_from_bytes(msg_data[0][1])
+        except Exception:
+            continue
+
+        found = {}
+        hnf_parts = []
+
         for part in msg.walk():
-            fn = part.get_filename()
-            if not fn:
-                continue
-            low = fn.lower()
-            # DBR reports
-            for out, (keys, exts) in TARGETS.items():
-                if out in found:
-                    continue
-                if low.endswith(exts) and any(k in low for k in keys):
-                    found[out] = part.get_payload(decode=True)
-            # H&F pdfs
-            if _is_hnf(low):
-                hnf_parts.append((fn, part.get_payload(decode=True)))
-            # STAR workbook
-            if _is_star(low):
-                kind = "weekly" if "weekly" in low else "monthly"
-                if not star_saved[kind]:
-                    with open(os.path.join(INBOX, f"star_{kind}.xlsx"), "wb") as f:
-                        f.write(part.get_payload(decode=True))
-                    star_saved[kind] = True
-                    print(f"  saved star_{kind}.xlsx  ({fn})")
 
+            if part.get_content_disposition() != "attachment":
+                continue
+
+            filename = part.get_filename()
+
+            if not filename:
+                continue
+
+            low = filename.lower()
+
+            # DBR Reports
+            for output_name, (keywords, exts) in TARGETS.items():
+
+                if output_name in found:
+                    continue
+
+                if low.endswith(exts) and any(k in low for k in keywords):
+                    found[output_name] = part.get_payload(decode=True)
+
+            # H&F Reports
+            if is_hnf(low):
+                hnf_parts.append(
+                    (filename, part.get_payload(decode=True))
+                )
+
+            # STAR Reports
+            if is_star(low):
+
+                kind = (
+                    "weekly"
+                    if "weekly" in low
+                    else "monthly"
+                )
+
+                if not star_saved[kind]:
+
+                    with  os.path.join(
+                            INBOX_DIR,
+                            f"star_{kind}.xlsx"
+                        ),
+                        "wb",
+                    ) as f:
+                        f.write(part.get_payload(decode=True))
+
+                    star_saved[kind] = True
+
+                    print(
+                        f"Saved star_{kind}.xlsx ({filename})"
+                    )
+
+        # Save DBR Set
         if len(found) == len(TARGETS):
-            folder = os.path.join(INBOX, f"set_{n:04d}")
+
+            folder = os.path.join(
+                INBOX_DIR,
+                f"set_{idx:04d}"
+            )
+
             os.makedirs(folder, exist_ok=True)
-            for out, payload in found.items():
-                with open(os.path.join(folder, out), "wb") as f:
+
+            for name, payload in found.items():
+                with open(
+                    os.path.join(folder, name),
+                    "wb"
+                ) as f:
                     f.write(payload)
+
             sets += 1
+
+        # Save H&F Snapshot
         if hnf_parts:
-            folder = os.path.join(INBOX, f"hnf_{n:04d}")
+
+            folder = os.path.join(
+                INBOX_DIR,
+                f"hnf_{idx:04d}"
+            )
+
             os.makedirs(folder, exist_ok=True)
-            for fn, payload in hnf_parts:
-                with open(os.path.join(folder, os.path.basename(fn)), "wb") as f:
+
+            for filename, payload in hnf_parts:
+
+                with open(
+                    os.path.join(
+                        folder,
+                        os.path.basename(filename)
+                    ),
+                    "wb"
+                ) as f:
                     f.write(payload)
+
             hnf_snaps += 1
-    M.logout()
-    print(f"downloaded {sets} DBR set(s), {hnf_snaps} H&F snapshot email(s), "
-          f"STAR monthly={star_saved['monthly']} weekly={star_saved['weekly']} into {INBOX}/")
+
+    mail.logout()
+
+    print(
+        f"\nDownloaded {sets} DBR set(s), "
+        f"{hnf_snaps} H&F snapshot email(s), "
+        f"STAR monthly={star_saved['monthly']} "
+        f"weekly={star_saved['weekly']}"
+    )
 
 
 if __name__ == "__main__":
