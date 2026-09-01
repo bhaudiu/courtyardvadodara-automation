@@ -269,12 +269,19 @@ def run():
                 with open(os.path.join(folder, out), "wb") as f:
                     f.write(payload)
             sets += 1
-        else:
+        elif slot:
             missing = sorted(set(TARGETS) - set(slot))
             incomplete.append(f"{key}: have {sorted(slot)}, missing {missing}")
+            # Keep what did arrive — build_site reconstructs a provisional day
+            # from the Trial Balance plus the R106 history.
+            folder = os.path.join(INBOX, f"part_{key}")
+            os.makedirs(folder, exist_ok=True)
+            for out, payload in slot.items():
+                with open(os.path.join(folder, out), "wb") as f:
+                    f.write(payload)
 
     if incomplete:
-        print("incomplete day(s) — not written:")
+        print("incomplete day(s) — kept in part_* for provisional rebuild:")
         for line in incomplete:
             print(f"  {line}")
 
