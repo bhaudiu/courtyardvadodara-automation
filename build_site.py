@@ -390,6 +390,13 @@ def main():
     anchor_iso = store["anchor_date"]
     anchor_sections = store["anchor_sections"]
 
+    # H&F first: a day with no Manager Flash is reconstructed from the R106
+    # history rows in hf.json, so those have to be current before the DBR build.
+    try:
+        update_hf()
+    except Exception as e:
+        print(f"update_hf failed: {e}")
+
     # fold in last-year reference history (2024-2025 daily records from the monthly
     # GRR files) so the LY line + year-over-year columns have data. Never overwrites
     # this-year (2026) fetched days.
@@ -427,6 +434,15 @@ def main():
             added.append(day["business_date"])
         except Exception as e:
             print(f"  parse error: {e}")
+    # Days that arrived without a Manager Flash: rebuild the rooms side from the
+    # R106 history and the revenue side from the Trial Balance. Flagged
+    # provisional, and replaced the moment a real report set turns up.
+    try:
+        import provisional_days
+        added += provisional_days.fold(days, HF)
+    except Exception as e:
+        print(f"  provisional days failed: {e}")
+
     if added:
         store["days"] = days
         json.dump(store, open(STORE, "w"), indent=0, default=str)
@@ -460,13 +476,9 @@ def main():
     json.dump(data, open(DATA, "w"), separators=(",", ":"), default=str)
     print(f"Wrote {DATA}: {len(out_days)} days, latest {latest}")
 
-    # H&F (Pick-up) and STR both live in their own persistent json files, fed
-    # from the same inbox/ that fetch_email.py filled. Errors here must never
-    # break the DBR build, which is already written above.
-    try:
-        update_hf()
-    except Exception as e:
-        print(f"update_hf failed: {e}")
+    # STR lives in its own persistent json file, fed from the same inbox/ that
+    # fetch_email.py filled. Errors here must never break the DBR build, which
+    # is already written above. (H&F ran at the top of main.)
     try:
         update_star()
     except Exception as e:
