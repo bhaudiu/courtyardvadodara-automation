@@ -25,6 +25,7 @@ GitHub secrets: IMAP_HOST (default imap.gmail.com), IMAP_USER, IMAP_PASS (app pa
 Optional: IMAP_LOOKBACK (max messages to scan, default 150)
           IMAP_DAYS_BACK (how far back to search, default 45)
           IMAP_MAILBOX  (default: Gmail's All Mail, so archived mail is still seen)
+          IMAP_RESET=1  (re-scan the whole window instead of only new mail)
 """
 
 import imaplib
@@ -32,6 +33,7 @@ import email
 import email.message
 import datetime as dt
 import io
+import json
 import os
 import re
 import shutil
@@ -45,6 +47,99 @@ PASS = os.environ["IMAP_PASS"]
 LOOKBACK = int(os.environ.get("IMAP_LOOKBACK", "150"))
 DAYS_BACK = int(os.environ.get("IMAP_DAYS_BACK", "45"))
 INBOX = "inbox"
+STATE = "fetch_state.json"
+# IMAP_RESET=1 forces a full re-scan of the window (use after a report schedule
+# is fixed at the property, to backfill days the fetcher has already walked past).
+RESET = os.environ.get("IMAP_RESET", "").strip().lower() in ("1", "true", "yes")
+
+
+# ---------------------------------------------------------------------------
+# Incremental state.
+#
+# Downloading every message in the window on every run is what got the account
+# throttled by Gmail (runs 281/282 on 2026-09-01 timed out mid-fetch after six
+# full passes in an hour). Instead, remember which messages have already been
+# processed and fetch only the bodies of ones we have not seen, so a run with no
+# new mail costs a single cheap metadata command.
+#
+# What we lose: a day whose reports arrive across several days can no longer be
+# re-assembled from mail already walked past, because store.json keeps the
+# result rather than the source. Set IMAP_RESET=1 for one run to re-scan the
+# whole window when that is needed.
+# ---------------------------------------------------------------------------
+
+_SEQ_RE = re.compile(rb"^\s*(\d+)\s+\(")
+_GM_RE = re.compile(rb"X-GM-MSGID\s+(\d+)")
+_UID_RE = re.compile(rb"UID\s+(\d+)")
+
+
+def load_state():
+    try:
+        with open(STATE) as f:
+            doc = json.load(f)
+        seen = doc.get("seen")
+        return dict(seen) if isinstance(seen, dict) else {}
+    except FileNotFoundError:
+        return {}
+    except Exception as e:
+        print(f"  state: could not read {STATE} ({e}); starting fresh")
+        return {}
+
+
+def save_state(seen):
+    """Persist processed-message keys, pruning ones older than the window."""
+    cutoff = (dt.date.today() - dt.timedelta(days=DAYS_BACK + 5)).isoformat()
+    kept = {k: v for k, v in seen.items() if v >= cutoff}
+    try:
+        with open(STATE, "w") as f:
+            json.dump({"updated": dt.datetime.now(dt.timezone.utc)
+                                    .strftime("%Y-%m-%dT%H:%M:%SZ"),
+                       "seen": kept}, f, indent=0, sort_keys=True)
+    except Exception as e:
+        print(f"  state: could not write {STATE} ({e})")
+    return len(kept)
+
+
+def parse_keys(lines, uidvalidity):
+    """Parse a FETCH (UID X-GM-MSGID) response into {sequence id: stable key}.
+
+    Gmail's X-GM-MSGID is stable for the life of the account. UID is only stable
+    while UIDVALIDITY holds, so it is qualified with it as a fallback.
+    """
+    keys = {}
+    for raw in lines or []:
+        line = raw[0] if isinstance(raw, tuple) else raw
+        if not isinstance(line, (bytes, bytearray)):
+            continue
+        seq = _SEQ_RE.match(line)
+        if not seq:
+            continue
+        gm = _GM_RE.search(line)
+        if gm:
+            keys[seq.group(1).decode()] = "gm:" + gm.group(1).decode()
+            continue
+        uid = _UID_RE.search(line)
+        if uid:
+            keys[seq.group(1).decode()] = f"uid:{uidvalidity}:{uid.group(1).decode()}"
+    return keys
+
+
+def message_keys(M, ids, uidvalidity):
+    """Stable key per message, fetched without downloading any bodies."""
+    if not ids:
+        return {}
+    seq = ",".join(i.decode() if isinstance(i, bytes) else str(i) for i in ids)
+    for item in ("(UID X-GM-MSGID)", "(UID)"):
+        try:
+            typ, data = M.fetch(seq, item)
+        except Exception:
+            continue
+        if typ == "OK":
+            keys = parse_keys(data, uidvalidity)
+            if keys:
+                return keys
+    print("  state: server returned no message ids; processing everything")
+    return {}
 
 # output filename -> (keywords matched in attachment name, allowed extensions)
 TARGETS = {
@@ -79,6 +174,7 @@ def _is_hnf(low: str) -> bool:
 
 def _is_star(low: str) -> bool:
     return low.endswith((".xlsx", ".xls")) and "star" in low
+
 
 def _normalize_filename(fn: str) -> str:
     """Decode MIME-encoded filenames (e.g. =?UTF-8?B?...?=) into a clean string."""
@@ -187,15 +283,31 @@ def run():
     if typ != "OK" or not data or not data[0]:
         typ, data = M.search(None, "ALL")
     ids = data[0].split()[-LOOKBACK:]
-    print(f"{len(ids)} message(s) to scan since {since}")
+    print(f"{len(ids)} message(s) in the window since {since}")
+
+    # Only download bodies we have not processed before.
+    uidvalidity = (M.untagged_responses.get("UIDVALIDITY") or [b"0"])[0]
+    if isinstance(uidvalidity, (bytes, bytearray)):
+        uidvalidity = uidvalidity.decode()
+    seen = {} if RESET else load_state()
+    keys = message_keys(M, ids, uidvalidity)
+    if RESET:
+        print("  IMAP_RESET set — re-scanning the whole window")
+    todo = [i for i in ids
+            if keys.get(i.decode() if isinstance(i, bytes) else str(i), "") not in seen]
+    print(f"{len(todo)} new, {len(ids) - len(todo)} already processed")
 
     # bucket key (business date) -> {output filename: payload}
     buckets = {}
     hnf_snaps = 0
     star_saved = {"monthly": False, "weekly": False}
 
-    for n, i in enumerate(reversed(ids)):  # newest first
+    today = dt.date.today().isoformat()
+    for n, i in enumerate(reversed(todo)):  # newest first
         _, md = M.fetch(i, "(RFC822)")
+        seq = i.decode() if isinstance(i, bytes) else str(i)
+        if seq in keys:
+            seen[keys[seq]] = today
         if not md or not md[0]:
             continue
         raw = md[0][1]
@@ -253,9 +365,10 @@ def run():
                 print(f"      {line}")
 
         if (n + 1) % 25 == 0:
-            print(f"processed {n + 1}/{len(ids)} messages...")
+            print(f"processed {n + 1}/{len(todo)} messages...")
 
     M.logout()
+    print(f"state: {save_state(seen)} message(s) remembered in {STATE}")
     # Write out every complete set; report the incomplete ones so a change in
     # what the property sends is visible in the log instead of silent.
     sets = 0
