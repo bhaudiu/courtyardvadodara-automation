@@ -641,8 +641,18 @@ function donutSvg(segs,centerBig,centerSmall){
     <text x="58" y="70" text-anchor="middle" font-size="9" fill="var(--faint)">${centerSmall}</text></svg>
     <div class="leg2">${leg}</div></div>`;
 }
+function setDataBadge(prov){
+  const b=document.querySelector('.subt .badge');if(!b)return;
+  b.innerHTML='<span class="dot"></span>'+(prov?'Provisional':'Reconciled');
+  b.style.color=prov?'#b7791f':'';
+  b.style.borderColor=prov?'#c8a34a':'';
+  b.title=prov
+    ?'No Manager Flash arrived for this day. Rooms, room revenue and ADR come from the R106 History section and the rest from the Trial Balance, so occupied rooms and ADR still include complimentary and house-use rooms, and outlet covers are unavailable.'
+    :'Built from a complete Manager Flash, Trial Balance and Daily Operations set.';
+}
 function renderView(iso){
   const day=DATA.days[iso],oi=day.operating_income;
+  setDataBadge(day.provisional);
   const isLatest=iso===DATA.latest_date;
   const ins=isLatest?DATA.insights:dayInsights(iso);
   const ly=DATA.days[lyIso(iso)],lyoi=ly?ly.operating_income:null;
