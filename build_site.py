@@ -333,9 +333,14 @@ def update_hf():
                 print(f"  hf parse error in {d}: {e}")
                 continue
             if run_date and data:
-                snaps[run_date] = data            # newest wins for same run date
+                # Opera now mails one R106 PDF per forward month in its own
+                # email, so several folders share a run date. Merge them into
+                # one snapshot instead of letting the last folder replace it.
+                snap = snaps.setdefault(run_date, {})
+                snap.update(data)
                 added.append(run_date)
-                print(f"  hf: snapshot {run_date} ({len(data)} stay rows) from {d}")
+                print(f"  hf: snapshot {run_date} +{len(data)} stay rows from {d} "
+                      f"({len(snap)} total)")
 
     if not snaps:
         return
