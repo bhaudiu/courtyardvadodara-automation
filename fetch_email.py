@@ -21,6 +21,7 @@ Optional: IMAP_LOOKBACK (recent emails to scan, default 150).
 import imaplib
 import email
 import os
+import email.message
 import shutil
 from email.header import decode_header
 from email.utils import parseaddr
