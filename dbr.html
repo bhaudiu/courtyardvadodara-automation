@@ -148,7 +148,14 @@
   .pcard .vs{font-size:12.5px;color:var(--faint);margin-top:6px}
   .pk-grid{display:grid;grid-template-columns:1fr;gap:16px}
   .pk-panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-  .pk-mhead{background:var(--head);text-align:center;font-weight:700;font-size:14px;padding:10px;border-bottom:1px solid var(--line)}
+  .pk-mhead{background:var(--head);text-align:center;font-weight:700;font-size:14px;padding:10px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .pk-mhead .mh-l,.pk-mhead .mh-r{flex:1 1 0;min-width:0}
+  .pk-mhead .mh-r{display:flex;justify-content:flex-end}
+  .pk-mhead .mh-name{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px}
+  .pk-closed{font-weight:600;font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:#b7791f;background:#fdf6e6;border:1px solid #c8a34a;border-radius:999px;padding:2px 8px}
+  .pk-toggle{font-family:inherit;font-size:11.5px;font-weight:600;white-space:nowrap;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:4px 10px;cursor:pointer}
+  .pk-toggle:hover{color:var(--text);border-color:var(--muted)}
+  .pk-panel.days-off tbody.pk-days{display:none}
   .pk-ai{display:flex;gap:9px;align-items:flex-start;padding:11px 16px;border-bottom:1px solid var(--line);background:linear-gradient(135deg,#fdeef2,#f8fafc);font-size:12.5px;color:var(--text);line-height:1.5}
   .pk-ai .ic{color:var(--accent-soft);font-size:14px;flex:0 0 auto}
   .pk-scroll{overflow-x:auto}
@@ -325,7 +332,7 @@
     :root{--bg:#fff;--panel:#fff;--panel-2:#fff;--head:#eef1f4;--sec:#e7ebef;--text:#111;--muted:#333;--faint:#555;--line:#b7bfc8;--line-soft:#d7dde3;--accent:#8a0f30;--accent-soft:#8a0f30;--good:#127a45;--bad:#b3243f}
     html,body{background:#fff!important;color:#111!important}
     body{background-image:none!important}
-    header,footer,.tabnav,#controls,.picker,.refbtn,.dlbtn,.sub .badge,.chleg,.tt,.hint,.note{display:none!important}
+    header,footer,.tabnav,#controls,.picker,.refbtn,.dlbtn,.pk-toggle,.sub .badge,.chleg,.tt,.hint,.note{display:none!important}
     .sub{display:none!important}
     .page{padding:0!important}
     .printonly{display:block!important}
@@ -891,7 +898,40 @@ function snapFrom(toIso,n){
   earlier.forEach(d=>{const diff=Math.abs(dObj(d)-dObj(target));if(diff<bd){bd=diff;best=d;}});
   return best;
 }
-function renderPickup(){
+/* ---------- day-by-day rows: collapsible, and closed months start collapsed ----------
+   A month whose last calendar day is before the "as of" snapshot is finished: its
+      day rows can only repeat what the closing line already says, so they are hidden
+         and the total is labelled Month-End Closing. Any month can be toggled by hand,
+            and that choice is remembered on this device. */
+  function pkMonthClosed(ym,asOf){
+    if(!ym||!asOf)return false;
+    const [y,m]=ym.split('-').map(Number);
+    const lastDay=new Date(y,m,0);
+    const ref=dObj(asOf);
+    return lastDay<new Date(ref.getFullYear(),ref.getMonth(),ref.getDate());
+  }
+  function pkDaysPref(ym){try{return localStorage.getItem('cyv_pkdays_'+ym);}catch(e){return null;}}
+  function pkSetDaysPref(ym,on){try{localStorage.setItem('cyv_pkdays_'+ym,on?'1':'0');}catch(e){}}
+  function pkDaysOn(ym,closed){const p=pkDaysPref(ym);return p==null?!closed:p==='1';}
+  function pkBtnLabel(on,n){return on?'Hide days':`Show ${n} day${n===1?'':'s'}`;}
+  function pkWireToggles(view){
+    const panels=[...view.querySelectorAll('.pk-panel[data-ym]')];
+    const all=document.getElementById('pkAllBtn');
+    const syncAll=()=>{if(!all)return;
+                       const anyOn=panels.some(p=>!p.classList.contains('days-off'));
+                       all.textContent=anyOn?'Hide all days':'Show all days';
+                       all.dataset.next=anyOn?'off':'on';};
+    const setPanel=(p,on)=>{
+      p.classList.toggle('days-off',!on);
+      const btn=p.querySelector('.pk-toggle');
+      if(btn)btn.textContent=pkBtnLabel(on,p.querySelectorAll('tbody.pk-days tr').length);
+      pkSetDaysPref(p.dataset.ym,on);};
+    panels.forEach(p=>{const btn=p.querySelector('.pk-toggle');if(!btn)return;
+                       btn.onclick=()=>{setPanel(p,p.classList.contains('days-off'));syncAll();};});
+    if(all)all.onclick=()=>{const on=all.dataset.next==='on';panels.forEach(p=>setPanel(p,on));syncAll();};
+    syncAll();
+  }
+  function renderPickup(){
   const view=document.getElementById('view');
   if(!HF){return renderPickupActuals();}
   const A=HF.snaps[PFROM],B=HF.snaps[PTO];
@@ -927,16 +967,21 @@ function renderPickup(){
       const best=bd?` Strongest day was ${String(dObj(bd.iso).getDate()).padStart(2,'0')}/${ym.slice(5)} (${sgnN(bd.dR)} rooms${bd.dV!=null?', '+sgnR(bd.dV):''}).`:'';
       ai=`<b>${mName}</b> ${rphrase} and ${vphrase} in revenue since ${fromShort}${(adrPkt!=null&&dRt>0)?` at a <b>${rs(adrPkt)}</b> pick-up ADR`:''}.${best} On the books at <b>${occTxt}</b> occupancy.`;
     }
-    const totRow=`<tr class="pk-tot"><td>Total</td>
-      ${occCell(avgOcc)}
-      <td class="num">${num(rT)}</td><td class="num">${rs(bT)}</td><td class="num">${rs(vT)}</td>
-      ${dcell(dRt,sgnN)}${dcell(dVt,sgnR)}<td class="num">${adrPkt==null?'—':rs(adrPkt)}</td>${dcell(adrChgt,sgnR)}</tr>`;
-    return `<div class="pk-panel"><div class="pk-mhead">${mName}</div>
-      <div class="pk-ai"><span class="ic">✦</span><span>${ai}</span></div>
-      <div class="pk-scroll"><table class="pk"><thead>
-        <tr><th rowspan="2">Date</th><th rowspan="2">Occ%</th><th colspan="3" class="grp">On the Books</th><th colspan="3" class="grp">Pick-up</th><th rowspan="2">ADR Δ</th></tr>
-        <tr class="subh"><th>Rooms</th><th>ADR</th><th>Rev</th><th>Rooms</th><th>Rev</th><th>ADR</th></tr></thead>
-      <tbody>${rows}${totRow}</tbody></table></div></div>`;}).join('');
+     const closed=pkMonthClosed(ym,PTO);
+        const daysOn=pkDaysOn(ym,closed);
+        const totRow=`<tr class="pk-tot"><td>${closed?'Month-End Closing':'Total'}</td>
+              ${occCell(avgOcc)}
+                    <td class="num">${num(rT)}</td><td class="num">${rs(bT)}</td><td class="num">${rs(vT)}</td>
+                          ${dcell(dRt,sgnN)}${dcell(dVt,sgnR)}<td class="num">${adrPkt==null?'—':rs(adrPkt)}</td>${dcell(adrChgt,sgnR)}</tr>`;
+        return `<div class="pk-panel${daysOn?'':' days-off'}" data-ym="${ym}">
+              <div class="pk-mhead"><span class="mh-l"></span>
+                      <span class="mh-name">${mName}${closed?'<span class="pk-closed">Closed</span>':''}</span>
+                              <span class="mh-r"><button type="button" class="pk-toggle">${pkBtnLabel(daysOn,dates.length)}</button></span></div>
+                                    <div class="pk-ai"><span class="ic">✦</span><span>${ai}</span></div>
+                                          <div class="pk-scroll"><table class="pk"><thead>
+                                                  <tr><th rowspan="2">Date</th><th rowspan="2">Occ%</th><th colspan="3" class="grp">On the Books</th><th colspan="3" class="grp">Pick-up</th><th rowspan="2">ADR Δ</th></tr>
+                                                          <tr class="subh"><th>Rooms</th><th>ADR</th><th>Rev</th><th>Rooms</th><th>Rev</th><th>ADR</th></tr></thead>
+                                                                <tbody class="pk-days">${rows}</tbody><tbody>${totRow}</tbody></table></div></div>`;}).join('');
   // ===== Today's snapshot (the "To" date) =====
   const tb=B[PTO]||{},ta=A[PTO]||{};
   const tPk=(tb.r!=null&&ta.r!=null)?tb.r-ta.r:null;
@@ -991,8 +1036,10 @@ function renderPickup(){
     <div class="summary"><div class="ic">✦</div><div class="tx">Pick-up — on the books at <b>${labelDate(PTO)}</b> vs <b>${labelDate(PFROM)}</b>, by stay date. <b>On the Books</b> = rooms / ADR / revenue as of ${labelDate(PTO).replace(/^\w+, /,'')}. <b>Pick-up</b> = change since ${labelDate(PFROM).replace(/^\w+, /,'')} (pick-up ADR = the rate the new rooms came in at). <b>ADR Δ</b> = ADR change vs the prior snapshot.</div></div>
     ${todayHTML}
     ${paceHTML}
-    <div class="pk-legend"><span class="lg-label">Occupancy</span>${OCCBANDS.map(x=>`<span class="lg-item"><i style="background:${x[1]}"></i>${x[2]}</span>`).join('')}</div>
-    <div class="pk-grid">${panels||'<div class="err">No overlapping stay dates between the two snapshots.</div>'}</div>`;
+     <div class="pk-legend"><span class="lg-label">Occupancy</span>${OCCBANDS.map(x=>`<span class="lg-item"><i style="background:${x[1]}"></i>${x[2]}</span>`).join('')}
+           <button type="button" id="pkAllBtn" class="pk-toggle" style="margin-left:auto">Hide all days</button></div>
+               <div class="pk-grid">${panels||'<div class="err">No overlapping stay dates between the two snapshots.</div>'}</div>`;
+    pkWireToggles(view);
   // wire editable forecast → live gap + persistence
   view.querySelectorAll('.fc-in').forEach(inp=>{
     const val=()=>+(inp.value.replace(/[^0-9]/g,''))||0;
